@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static com.mcphub.domain.member.status.AuthErrorStatus.INVALID_ROLE;
+import static com.mcphub.global.common.exception.code.status.AuthErrorStatus.INVALID_ROLE;
 
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {

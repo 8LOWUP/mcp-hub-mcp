@@ -5,7 +5,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.mcphub.domain.member.service.member.MemberService;
 import com.mcphub.global.config.security.auth.CustomAccessDeniedHandler;
 import com.mcphub.global.config.security.jwt.JwtAuthenticationFilter;
 import com.mcphub.global.config.security.jwt.JwtExceptionFilter;
@@ -22,7 +21,7 @@ import com.mcphub.global.config.security.jwt.JwtProvider;
 
 import java.time.LocalDateTime;
 
-import static com.mcphub.domain.member.status.AuthErrorStatus.INVALID_ACCESS_TOKEN;
+import static com.mcphub.global.common.exception.code.status.AuthErrorStatus.INVALID_ACCESS_TOKEN;
 
 @Configuration
 @EnableWebSecurity
@@ -30,7 +29,6 @@ import static com.mcphub.domain.member.status.AuthErrorStatus.INVALID_ACCESS_TOK
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
-    private final MemberService memberService;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     private final RateLimitFilter rateLimitFilter;
