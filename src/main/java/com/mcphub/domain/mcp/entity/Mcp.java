@@ -63,6 +63,9 @@ public class Mcp extends BaseEntity {
 	@Column(nullable = true, columnDefinition = "text")
 	private String description;
 
+	@Column(nullable = true, columnDefinition = "text")
+	private String developerName;
+
 	@Column(name = "source_url", columnDefinition = "text")
 	private String sourceUrl;
 

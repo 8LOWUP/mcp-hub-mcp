@@ -2,8 +2,7 @@ package com.mcphub.domain.mcp.service.mcpDashboard;
 
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
-import com.mcphub.domain.mcp.dto.request.McpMetaDataRequest;
-import com.mcphub.domain.mcp.dto.request.McpPublishRequest;
+import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
@@ -19,6 +18,7 @@ import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.global.common.base.BaseResponse;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,6 +38,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class McpDashboardServiceImpl implements McpDashboardService {
 
+	@Value("${spring.web.resources.static-locations}")
+	private String uploadDir;
+
+	private final String imageUrl = "http:localhost:8081/images/";
 	private final McpDslRepository mcpDslRepository;
 	private final McpRepository mcpRepository;
 	private final PlatformRepository platformRepository;
@@ -71,7 +79,6 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long createMcpDraft(Long userId, McpDraftRequest request) {
 		Mcp mcp = new Mcp();
 		mcp.setUserId(userId);
-		mcp.setName(request.getTitle());
 		mcp.setIsPublished(false);
 		return mcpRepository.save(mcp).getId();
 	}
@@ -92,7 +99,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 	@Override
 	@Transactional
-	public Long uploadMcpMetaData(Long userId, Long mcpId, McpMetaDataRequest request) {
+	public Long uploadMcpMetaData(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
@@ -101,17 +108,56 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
 
+		try {
+			if (file != null && !file.isEmpty()) {
+				// 원본 파일명에서 확장자 추출
+				String originalName = file.getOriginalFilename();   // 예: "logo.png"
+				String ext = "";
+				if (originalName != null && originalName.lastIndexOf(".") != -1) {
+					ext = originalName.substring(originalName.lastIndexOf(".")); // ".png"
+				}
+
+				// mcpId 기반 저장 파일명 생성
+				String fileName = mcpId.toString() + ext;
+				mcp.setImageUrl(imageUrl + fileName);
+
+				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
+				File directory = new File(uploadDir.replace("file:", ""));
+				if (!directory.exists()) {
+					directory.mkdirs();
+				}
+
+				// 최종 파일 저장
+				File dest = new File(directory, fileName);
+				file.transferTo(dest);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+		}
+
 		Category category = categoryRepository.findById(request.getCategoryId())
 		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		Platform platform = platformRepository.findById(request.getPlatformId())
-		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		Platform platform = platformRepository.findByName(request.getPlatformName())
+		                                      .orElse(null);
+		if (platform == null) {
+			platform = new Platform();
+			platform.setName(request.getPlatformName());
+			platformRepository.save(platform);
+		}
 		License license = licenseRepository.findById(request.getLicenseId())
 		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		mcp.setName(request.getName());
-		mcp.setVersion(request.getVersion());
+		//mcp.setVersion(request.getVersion());
 		mcp.setDescription(request.getDescription());
-		mcp.setImageUrl(request.getImageUrl());
+		mcp.setIsPublished(false);
+		mcp.setSourceUrl(request.getSourceUrl());
+		mcp.setRequestUrl(request.getRequestUrl());
+		mcp.setDeveloperName(request.getDeveloperName());
 		mcp.setIsKeyRequired(request.getIsKeyRequired());
 		mcp.setCategory(category);
 		mcp.setPlatform(platform);
@@ -119,8 +165,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 		if (request.getTools() == null) {
 			mcpToolRepository.deleteByMcp(mcp);
-		}
-		else {
+		} else {
 			mcpToolRepository.deleteByMcp(mcp);
 
 			List<ArticleMcpTool> tools = request.getTools().stream()
@@ -139,28 +184,89 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 	@Override
 	@Transactional
-	public Long publishMcp(Long userId, Long mcpId, McpPublishRequest request) {
+	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
+		try {
+			if (file != null && !file.isEmpty()) {
+				// 원본 파일명에서 확장자 추출
+				String originalName = file.getOriginalFilename();   // 예: "logo.png"
+				String ext = "";
+				if (originalName != null && originalName.lastIndexOf(".") != -1) {
+					ext = originalName.substring(originalName.lastIndexOf(".")); // ".png"
+				}
 
-		//공개 처리
-		if (request.isPublish()) {
-			mcp.setIsPublished(true);
-			mcp.setLastPublishAt(LocalDateTime.now());
+				// mcpId 기반 저장 파일명 생성
+				String fileName = mcpId.toString() + ext;
+				mcp.setImageUrl(imageUrl + fileName);
 
-			if (mcp.getPublishedAt() == null) {
-				mcp.setPublishedAt(LocalDateTime.now());
+				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
+				File directory = new File(uploadDir.replace("file:", ""));
+				if (!directory.exists()) {
+					directory.mkdirs();
+				}
+
+				// 최종 파일 저장
+				File dest = new File(directory, fileName);
+				file.transferTo(dest);
 			}
-		}
-		// 비공개 처리
-		else {
-			mcp.setIsPublished(false);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
 		}
 
+		Category category = categoryRepository.findById(request.getCategoryId())
+		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		Platform platform = platformRepository.findByName(request.getPlatformName())
+		                                      .orElse(null);
+		if (platform == null) {
+			platform = new Platform();
+			platform.setName(request.getPlatformName());
+			platformRepository.save(platform);
+		}
+
+		License license = licenseRepository.findById(request.getLicenseId())
+		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+
+		mcp.setName(request.getName());
+		//mcp.setVersion(request.getVersion());
+		mcp.setDescription(request.getDescription());
+		mcp.setIsPublished(true);
+		mcp.setSourceUrl(request.getSourceUrl());
+		mcp.setDeveloperName(request.getDeveloperName());
+		mcp.setRequestUrl(request.getRequestUrl());
+		mcp.setIsKeyRequired(request.getIsKeyRequired());
+		mcp.setCategory(category);
+		mcp.setPlatform(platform);
+		mcp.setLicense(license);
+		LocalDateTime now = LocalDateTime.now();
+		if (mcp.getPublishedAt() == null) {
+			mcp.setPublishedAt(now);
+		}
+		mcp.setLastPublishAt(now);
+		
+		if (request.getTools() == null) {
+			mcpToolRepository.deleteByMcp(mcp);
+		} else {
+			mcpToolRepository.deleteByMcp(mcp);
+
+			List<ArticleMcpTool> tools = request.getTools().stream()
+			                                    .map(t -> ArticleMcpTool.builder()
+			                                                            .mcp(mcp)
+			                                                            .name(t.getName())
+			                                                            .content(t.getContent())
+			                                                            .build())
+			                                    .toList();
+
+			mcpToolRepository.saveAll(tools);
+		}
 		return mcpRepository.save(mcp).getId();
 	}
 

@@ -7,7 +7,6 @@ import com.mcphub.domain.mcp.dto.response.api.LicenseResponse;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.api.PlatformResponse;
-import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,12 +24,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
-import com.mcphub.domain.mcp.dto.request.McpMetaDataRequest;
-import com.mcphub.domain.mcp.dto.request.McpPublishRequest;
+import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.global.common.base.BaseResponse;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/mcps/dashboard")
@@ -90,26 +94,28 @@ public class McpDashboardController {
 		return BaseResponse.onSuccess(mcpId);
 	}
 
-	//TODO
+	//TODO 프론트에서 조회
 	@GetMapping("/category")
 	@Operation(summary = "카테고리 조회", description = "MCP 카테고리 목록을 조회합니다.")
 	public BaseResponse<CategoryResponse> getCategories() {
 		return BaseResponse.onSuccess(new CategoryResponse());
 	}
 
-	//TODO
+	//TODO 프론트에서 조회
 	@GetMapping("/license")
 	@Operation(summary = "라이선스 조회", description = "MCP 라이선스 목록을 조회합니다.")
 	public BaseResponse<LicenseResponse> getLicenses() {
 		return BaseResponse.onSuccess(new LicenseResponse());
 	}
 
-	//TODO
+	//TODO 확인 필요
 	@GetMapping("/platform")
 	@Operation(summary = "플랫폼 조회", description = "MCP 플랫폼 목록을 조회합니다.")
 	public BaseResponse<PlatformResponse> getPlatforms() {
 		return BaseResponse.onSuccess(new PlatformResponse());
 	}
+
+	//TODO 메타데이터에 합칠 예정
 
 	/**
 	 * MCP Url 업로드
@@ -125,7 +131,7 @@ public class McpDashboardController {
 	@PatchMapping("/{mcpId}/url")
 	public BaseResponse<Long> uploadMCPUrl(@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
 	                                       @Parameter(description = "메타데이터 요청 데이터") @RequestBody McpUrlRequest request) {
-		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpUrl(mcpId, request));
+		return null;
 	}
 
 	/**
@@ -142,9 +148,10 @@ public class McpDashboardController {
 	@PatchMapping("/{mcpId}/meta")
 	public BaseResponse<Long> uploadMcpMetaData(
 		@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
-		@Parameter(description = "배포 요청 데이터") @RequestBody McpMetaDataRequest request) {
-		Long updateMcpId = mcpDashboardAdviser.uploadMcpMetaData(mcpId, request);
-		return BaseResponse.onSuccess(updateMcpId);
+		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
+		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+
+		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(mcpId, request, file));
 	}
 
 	/**
@@ -160,9 +167,9 @@ public class McpDashboardController {
 	})
 	@PatchMapping("/{mcpId}/publish")
 	public BaseResponse<Long> publishMcp(@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
-	                                     @Parameter(description = "배포 요청 데이터") @RequestBody McpPublishRequest request) {
-		Long publishedMcpId = mcpDashboardAdviser.publishMcp(mcpId, request);
-		return BaseResponse.onSuccess(publishedMcpId);
+	                                     @Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
+	                                     @Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(mcpId, request, file));
 	}
 
 	/**

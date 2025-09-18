@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class McpMetaDataRequest {
+public class McpUploadDataRequest {
 
 	private String name;
 	//private String version;
@@ -24,9 +24,8 @@ public class McpMetaDataRequest {
 	//private String version;
 	//플랫폼 이름으로 서치
 	//private Long platformId;
+	private String requestUrl;
 	private String platformName;
-	// 이미지 파일로 받을 예정
-	// private String imageUrl;
 	private String developerName;
 	private Boolean isKeyRequired;
 	private Long licenseId;
