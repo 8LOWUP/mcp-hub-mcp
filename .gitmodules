@@ -1,3 +1,6 @@
 [submodule "config"]
 	path = config
 	url = https://github.com/8LOWUP/mcp-market-api-server-config.git
+[submodule "src/main/java/com/mcphub/global"]
+	path = src/main/java/com/mcphub/global
+	url = https://github.com/8LOWUP/mcp-hub-global.git
