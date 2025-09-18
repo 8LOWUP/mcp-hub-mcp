@@ -35,7 +35,7 @@ public class McpTokenController {
 	@Operation(summary = "MCP 토큰 저장", description = "특정 MCP에 대한 토큰을 저장합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "토큰 저장 성공"),
-		@ApiResponse(responseCode = "401", description = "인증 실패"),
+		@ApiResponse(responseCode = "400", description = "토큰값이 없음"),
 		@ApiResponse(responseCode = "404", description = "MCP 또는 UserMcp를 찾을 수 없음")
 	})
 	@PostMapping("/{mcpId}")
@@ -52,7 +52,7 @@ public class McpTokenController {
 	@Operation(summary = "MCP 토큰 수정", description = "저장된 MCP 토큰을 수정합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "토큰 수정 성공"),
-		@ApiResponse(responseCode = "401", description = "인증 실패"),
+		@ApiResponse(responseCode = "400", description = "토큰 값이 없음"),
 		@ApiResponse(responseCode = "404", description = "MCP 또는 UserMcp를 찾을 수 없음")
 	})
 	@PatchMapping("/{mcpId}")

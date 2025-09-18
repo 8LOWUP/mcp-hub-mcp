@@ -118,6 +118,7 @@ public class McpDashboardController {
 	@Operation(summary = "MCP URL 등록", description = "MCP에 URL을 업로드합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "URL 등록 성공"),
+		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP를 찾을 수 없음")
 	})
@@ -134,6 +135,7 @@ public class McpDashboardController {
 	@Operation(summary = "MCP 메타데이터 등록", description = "특정 MCP에 메타데이터를 등록합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "메타데이터 등록 성공"),
+		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP/카테고리/플랫폼/라이선스가 존재하지 않음")
 	})
@@ -152,6 +154,7 @@ public class McpDashboardController {
 	@Operation(summary = "MCP 배포", description = "특정 MCP를 배포/미배포 처리합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "배포 상태 변경 성공"),
+		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP를 찾을 수 없음")
 	})

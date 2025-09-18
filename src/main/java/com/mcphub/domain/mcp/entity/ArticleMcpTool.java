@@ -33,9 +33,9 @@ public class ArticleMcpTool extends BaseEntity {
     @JoinColumn(name = "mcp_id", nullable = false)
     private Mcp mcp;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = true, columnDefinition = "TEXT")
     private String name;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = true, columnDefinition = "TEXT")
     private String content;
 }

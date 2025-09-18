@@ -87,7 +87,7 @@ public class McpController {
 	@Operation(summary = "MCP 저장(구매)", description = "마켓에서 MCP를 저장(구매)합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "저장 성공"),
-		@ApiResponse(responseCode = "400", description = "발행되지 않은 MCP"),
+		@ApiResponse(responseCode = "402", description = "발행되지 않은 MCP"),
 		@ApiResponse(responseCode = "404", description = "MCP가 존재하지 않음"),
 		@ApiResponse(responseCode = "409", description = "이미 저장된 MCP")
 	})

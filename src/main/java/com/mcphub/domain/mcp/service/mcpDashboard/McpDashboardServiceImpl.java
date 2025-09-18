@@ -117,8 +117,10 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		mcp.setPlatform(platform);
 		mcp.setLicense(license);
 
-		// MCP Tool 리스트 갱신 (삭제 -> 갱신)
-		if (request.getTools() != null) {
+		if (request.getTools() == null) {
+			mcpToolRepository.deleteByMcp(mcp);
+		}
+		else {
 			mcpToolRepository.deleteByMcp(mcp);
 
 			List<ArticleMcpTool> tools = request.getTools().stream()
