@@ -6,6 +6,7 @@ import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
+import com.mcphub.domain.mcp.dto.response.api.McpUrlResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
@@ -40,6 +41,14 @@ public class McpDashboardAdviser {
 	public Long createMcpDraft(McpDraftRequest request) {
 		Long userId = securityUtils.getUserId();
 		return mcpDashboardService.createMcpDraft(userId, request);
+	}
+
+	public McpUrlResponse getMcpUrl(Long mcpId) {
+		String url = mcpDashboardService.getMcpUrl(mcpId);
+		McpUrlResponse response = McpUrlResponse.builder()
+		                                        .mcpId(mcpId)
+		                                        .url(url).build();
+		return response;
 	}
 
 	public Long uploadMcpUrl(Long mcpId, McpUrlRequest request) {
