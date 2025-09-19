@@ -38,8 +38,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class McpDashboardServiceImpl implements McpDashboardService {
 
-	@Value("${spring.web.resources.static-locations}")
-	private String uploadDir;
+	//TODO
+	private String uploadDir = "";
 
 	private final String imageUrl = "http:localhost:8081/images/";
 	private final McpDslRepository mcpDslRepository;
