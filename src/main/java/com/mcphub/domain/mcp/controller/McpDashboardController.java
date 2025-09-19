@@ -131,7 +131,7 @@ public class McpDashboardController {
 	@PatchMapping("/{mcpId}/url")
 	public BaseResponse<Long> uploadMCPUrl(@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
 	                                       @Parameter(description = "메타데이터 요청 데이터") @RequestBody McpUrlRequest request) {
-		return null;
+		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpUrl(mcpId, request));
 	}
 
 	/**

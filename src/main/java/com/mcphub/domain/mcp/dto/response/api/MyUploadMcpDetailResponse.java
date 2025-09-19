@@ -18,7 +18,9 @@ public class MyUploadMcpDetailResponse {
 	private String version;
 	private String description;
 	private String imageUrl;
+	private String requestUrl;
 	private String sourceUrl;
+	private String developerName;
 	private Boolean isKeyRequired;
 
 	//현재 MCP가 선택한 값
@@ -31,13 +33,15 @@ public class MyUploadMcpDetailResponse {
 	private Long licenseId;
 	private String licenseName;
 
-	// 상태값
-	private Boolean isPublished;
+	private double averageRating;     // null 가능
+	private Long savedUserCount;
 
-	//최초 배포일
+	// 상태값
+	private boolean isPublished;
+
+	//최초/최종 배포일
 	private LocalDateTime publishedAt;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
+	private LocalDateTime lastPublishedAt;
 
 	// 툴 설명
 	private List<McpToolResponse> tools;

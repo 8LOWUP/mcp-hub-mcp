@@ -250,8 +250,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		if (mcp.getPublishedAt() == null) {
 			mcp.setPublishedAt(now);
 		}
-		mcp.setLastPublishAt(now);
-		
+		mcp.setLastPublishedAt(now);
+
 		if (request.getTools() == null) {
 			mcpToolRepository.deleteByMcp(mcp);
 		} else {

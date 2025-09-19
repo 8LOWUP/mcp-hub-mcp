@@ -15,7 +15,7 @@ public class McpListRequest {
 	private int page = 0;
 	//TODO : FE 요구사항 확인 필요
 	private int size = 12;
-	private String search;
+	private String sort;
 	private String category;
-	private String sort;  // "latest" or "popular" or "rating"
+	private String search;
 }

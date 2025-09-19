@@ -23,7 +23,8 @@ public class MyUploadMcpDetailReadModel {
 	private String imageUrl;
 	private String sourceUrl;
 	private Boolean isKeyRequired;
-
+	private String requestUrl;
+	private String developerName;
 	private Long categoryId;
 	private String categoryName;
 	private Long platformId;
@@ -36,7 +37,5 @@ public class MyUploadMcpDetailReadModel {
 	private boolean isPublished;
 	private LocalDateTime publishedAt;
 	private LocalDateTime lastPublishedAt;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
 	private List<McpToolResponse> tools;
 }

@@ -39,6 +39,8 @@ public class McpDashboardConverter {
 		                                .description(readModel.getDescription())
 		                                .imageUrl(readModel.getImageUrl())
 		                                .sourceUrl(readModel.getSourceUrl())
+		                                .requestUrl(readModel.getRequestUrl())
+		                                .developerName(readModel.getDeveloperName())
 		                                .isKeyRequired(readModel.getIsKeyRequired())
 
 		                                .categoryId(readModel.getCategoryId())
@@ -47,11 +49,11 @@ public class McpDashboardConverter {
 		                                .platformName(readModel.getPlatformName())
 		                                .licenseId(readModel.getLicenseId())
 		                                .licenseName(readModel.getLicenseName())
-
+		                                .averageRating(readModel.getAverageRating())
+		                                .savedUserCount(readModel.getSavedUserCount())
 		                                .isPublished(readModel.isPublished())
 		                                .publishedAt(readModel.getPublishedAt())
-		                                .createdAt(readModel.getCreatedAt())
-		                                .updatedAt(readModel.getUpdatedAt())
+		                                .lastPublishedAt(readModel.getLastPublishedAt())
 
 		                                .tools(readModel.getTools())
 		                                .build();

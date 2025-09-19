@@ -190,7 +190,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				userMcp.count().as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
-				mcp.lastPublishAt
+				mcp.lastPublishedAt
 			))
 			.from(mcp)
 			.leftJoin(mcp.category)
@@ -226,7 +226,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QUserMcp userMcp = QUserMcp.userMcp;
 
 		return queryFactory
-			.select(Projections.bean(
+			.select(Projections.fields(
 				MyUploadMcpDetailReadModel.class,
 				mcp.id,
 				mcp.name,
@@ -234,6 +234,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.description,
 				mcp.imageUrl,
 				mcp.sourceUrl,
+				mcp.requestUrl,
+				mcp.developerName,
 				mcp.isKeyRequired,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
@@ -243,11 +245,9 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				license.name.as("licenseName"),
 				review.rating.avg().as("averageRating"),
 				userMcp.count().as("savedUserCount"),
-				mcp.isPublished,
+				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
-				mcp.lastPublishAt,
-				mcp.createdAt,
-				mcp.updatedAt
+				mcp.lastPublishedAt.as("lastPublishedAt")
 			))
 			.from(mcp)
 			.leftJoin(mcp.category, category)
@@ -265,6 +265,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				license.id,
 				license.name,
 				mcp.isPublished,
+				mcp.lastPublishedAt,
 				mcp.createdAt,
 				mcp.updatedAt
 			)

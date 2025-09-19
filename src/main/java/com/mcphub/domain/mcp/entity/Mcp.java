@@ -83,6 +83,6 @@ public class Mcp extends BaseEntity {
 	private LocalDateTime publishedAt;
 
 	// 최종 publish 날짜
-	@Column(name = "last_publish_at", nullable = true)
-	private LocalDateTime lastPublishAt;
+	@Column(name = "last_published_at", nullable = true)
+	private LocalDateTime lastPublishedAt;
 }
