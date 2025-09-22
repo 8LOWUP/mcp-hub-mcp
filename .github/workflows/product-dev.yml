@@ -1,4 +1,4 @@
-name: MCP Hub member service - Develop Deploy
+name: MCP Hub mcp service - Develop Deploy
 
 on:
   push:
@@ -43,7 +43,13 @@ jobs:
           TAG=${{ github.sha }}
 
           docker build -t $IMAGE:$TAG .
+          
+          # build with both tags
+          docker build -t $IMAGE:$TAG -t $IMAGE:latest .
+
+          # push both tags
           docker push $IMAGE:$TAG
+          docker push $IMAGE:latest
 
   # 게이트웨이 레포 Reusable Workflow 호출
   trigger-gateway-deploy:
@@ -51,4 +57,8 @@ jobs:
     with:
       service: ${{ github.event.repository.name }}
       tag: ${{ github.sha }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      KCR_HOST: ${{ secrets.KCR_HOST }}
+      EC2_HOST: ${{ secrets.EC2_HOST }}
     needs: build-and-deploy
