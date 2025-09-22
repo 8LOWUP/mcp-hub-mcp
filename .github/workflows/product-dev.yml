@@ -18,6 +18,11 @@ jobs:
           submodules: recursive
       # 서브모듈도 함께 체크아웃
 
+      # config 파일들을 resources 폴더로 복사
+      - name: Copy all config files into resources
+        run: cp -r config/* src/main/resources/
+
+
       # Java 17 세팅 (spring boot 빌드용)
       - name: Set up JDK 17
         uses: actions/setup-java@v3
