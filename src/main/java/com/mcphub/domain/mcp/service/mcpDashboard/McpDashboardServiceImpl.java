@@ -18,6 +18,7 @@ import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.domain.mcp.service.kafka.ProducerService;
 import com.mcphub.global.common.base.BaseResponse;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -48,6 +51,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
+	private final ProducerService producerService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -103,7 +107,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-
+		//true에서 false로 전환시에만 이벤트 발생
+		boolean isChanged = Boolean.TRUE.equals(mcp.getIsPublished());
 		if (!mcp.getUserId().equals(userId)) {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
@@ -178,7 +183,14 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-
+		if (isChanged && TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					producerService.sendUrlDeletedEvent(mcpId);
+				}
+			});
+		}
 		return mcp.getId();
 	}
 
@@ -187,7 +199,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-
+		boolean isChanged = Boolean.FALSE.equals(mcp.getIsPublished());
 		if (!mcp.getUserId().equals(userId)) {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
@@ -267,6 +279,17 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
+		//URL NPE 발생가능성있음...
+		if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
+			if (TransactionSynchronizationManager.isSynchronizationActive()) {
+				TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+					@Override
+					public void afterCommit() {
+						producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
+					}
+				});
+			}
+		}
 		return mcpRepository.save(mcp).getId();
 	}
 
@@ -282,7 +305,14 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		mcp.delete();
-
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					producerService.sendUrlDeletedEvent(mcpId);
+				}
+			});
+		}
 		return mcpRepository.save(mcp).getId();
 	}
 }

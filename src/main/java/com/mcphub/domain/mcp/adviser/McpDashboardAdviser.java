@@ -43,14 +43,6 @@ public class McpDashboardAdviser {
 		return mcpDashboardService.createMcpDraft(userId, request);
 	}
 
-	public McpUrlResponse getMcpUrl(Long mcpId) {
-		String url = mcpDashboardService.getMcpUrl(mcpId);
-		McpUrlResponse response = McpUrlResponse.builder()
-		                                        .mcpId(mcpId)
-		                                        .url(url).build();
-		return response;
-	}
-
 	public Long uploadMcpUrl(Long mcpId, McpUrlRequest request) {
 		Long userId = securityUtils.getUserId();
 		return mcpDashboardService.uploadMcpUrl(userId, mcpId, request);
