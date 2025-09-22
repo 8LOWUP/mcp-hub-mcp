@@ -19,8 +19,10 @@ jobs:
       # 서브모듈도 함께 체크아웃
 
       # config 파일들을 resources 폴더로 복사
-      - name: Copy all config files into resources
-        run: cp -r config/* src/main/resources/
+      - name: Copy only yml configs
+        run: |
+          mkdir -p src/main/resources
+          cp config/*.yml src/main/resources/
 
 
       # Java 17 세팅 (spring boot 빌드용)
