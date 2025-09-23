@@ -41,7 +41,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     depends_on:
       - zookeeper
-      -
+
   redis:
     container_name: redis-mcp-market-local
     image: redis:latest
