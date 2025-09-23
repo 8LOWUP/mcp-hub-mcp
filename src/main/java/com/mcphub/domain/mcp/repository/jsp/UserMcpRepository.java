@@ -18,7 +18,7 @@ public interface UserMcpRepository extends JpaRepository<UserMcp, Long> {
 
 	boolean existsByUserIdAndMcpId(Long userId, Long mcpId);
 
-	void deleteByUserIdAndMcp(Long userId, Mcp mcp);
+	int deleteByUserIdAndMcp(Long userId, Mcp mcp);
 
 	Mcp mcp(Mcp mcp);
 
