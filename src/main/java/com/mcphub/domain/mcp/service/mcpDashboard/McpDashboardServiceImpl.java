@@ -18,8 +18,7 @@ import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
-import com.mcphub.domain.mcp.service.kafka.ProducerService;
-import com.mcphub.global.common.base.BaseResponse;
+import com.mcphub.domain.mcp.producer.ProducerService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -301,6 +300,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
+			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
 

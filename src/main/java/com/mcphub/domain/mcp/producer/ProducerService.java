@@ -1,11 +1,16 @@
-package com.mcphub.domain.mcp.service.kafka;
+package com.mcphub.domain.mcp.producer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcphub.domain.mcp.dto.event.McpSaveEvent;
 import com.mcphub.domain.mcp.dto.event.UrlSaveEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.UUID;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -26,9 +31,16 @@ public class ProducerService {
 	public void sendMessage(String topic, String key, Object value) {
 		try {
 			String payload = objectMapper.writeValueAsString(value);
-			kafkaTemplate.send(topic, key, payload);
-			log.info("Message sent to topic: " + topic + ", key: " + key + ", payload: " + payload);
-			System.out.println("Sent message with key " + key + ": " + payload);
+			String messageId = UUID.randomUUID().toString();
+
+			kafkaTemplate.send(MessageBuilder.withPayload(payload)
+			                                 .setHeader(KafkaHeaders.TOPIC, topic)
+			                                 .setHeader(KafkaHeaders.KEY, key)
+			                                 .setHeader("messageId", messageId)
+			                                 .build());
+
+			log.info("Message sent to topic: {}, key: {}, messageId: {}, payload: {}",
+				topic, key, messageId, payload);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException("Kafka message serialization failed", e);
 		}
@@ -52,6 +64,6 @@ public class ProducerService {
 
 	//MCP URL 삭제 (MCP가 삭제되거나, MCP가 미배포 상태로 전환 시)
 	public void sendUrlDeletedEvent(Long mcpId) {
-		sendMessage("mcp-deleted-url", mcpId.toString());
+		sendMessage("mcp-deleted-url", mcpId.toString(), Map.of("mcpId", mcpId));
 	}
 }
