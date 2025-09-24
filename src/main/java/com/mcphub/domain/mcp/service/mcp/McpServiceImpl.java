@@ -66,6 +66,7 @@ public class McpServiceImpl implements McpService {
 		UserMcp newUserMcp = UserMcp.builder()
 		                            .userId(userId)
 		                            .mcp(mcp)
+		                            .platformId(mcp.getPlatform().getId())
 		                            .build();
 
 		UserMcp saved = userMcpRepository.save(newUserMcp);
