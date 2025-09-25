@@ -35,7 +35,8 @@ public class McpReviewController {
 	@Operation(summary = "MCP 리뷰 조회", description = "해당 MCP의 리뷰를 조회한다")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
+		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+		@ApiResponse(responseCode = "404", description = "MCP가 존재하지않음")
 	})
 	@GetMapping("/{mcpId}")
 	public BaseResponse<Page<McpReviewResponse>> getReviewList(@PathVariable Long mcpId, @ModelAttribute
@@ -51,7 +52,8 @@ public class McpReviewController {
 	@Operation(summary = "MCP 리뷰 저장", description = "해당 MCP의 리뷰를 저장한다")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
+		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+		@ApiResponse(responseCode = "404", description = "MCP가 존재하지않음")
 	})
 	@PostMapping("/{mcpId}")
 	public BaseResponse<Long> saveReview(@PathVariable Long mcpId, @RequestBody McpReviewRequest request) {
@@ -61,7 +63,9 @@ public class McpReviewController {
 	@Operation(summary = "MCP 리뷰 수정", description = "해당 MCP의 리뷰를 수정한다")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
+		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+		@ApiResponse(responseCode = "403", description = "접근 금지 (본인이 아닌 게시글을 수정 할때)"),
+		@ApiResponse(responseCode = "404", description = "해당 리뷰가 존재하지않음")
 	})
 	@PatchMapping("/{reviewId}")
 	public BaseResponse<Long> updateReview(@PathVariable Long reviewId, @RequestBody McpReviewRequest request) {
@@ -71,7 +75,9 @@ public class McpReviewController {
 	@Operation(summary = "MCP 리뷰 삭제", description = "해당 MCP의 리뷰를 삭제한다")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
+		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
+		@ApiResponse(responseCode = "403", description = "접근 금지 (본인이 아닌 게시글을 삭제 할때)"),
+		@ApiResponse(responseCode = "404", description = "해당 리뷰가 존재하지않음")
 	})
 	@DeleteMapping("/{reviewId}")
 	public BaseResponse<Long> deleteReview(@PathVariable Long reviewId) {

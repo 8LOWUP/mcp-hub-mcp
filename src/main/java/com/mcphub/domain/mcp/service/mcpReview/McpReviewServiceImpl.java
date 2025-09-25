@@ -73,7 +73,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 		                                         .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		if (!mcpReview.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._VALIDATION_ERROR);
+			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
 		mcpReview.setRating(request.getRating());
 		mcpReview.setContent(request.getComment());
@@ -87,7 +87,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 		                                         .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		if (!mcpReview.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._VALIDATION_ERROR);
+			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
 		mcpReviewRepository.delete(mcpReview);
 		return reviewId;
