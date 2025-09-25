@@ -18,7 +18,6 @@ import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
-import com.mcphub.domain.mcp.producer.ProducerService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
-	private final ProducerService producerService;
+	//private final ProducerService producerService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -182,14 +181,14 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-		if (isChanged && TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					producerService.sendUrlDeletedEvent(mcpId);
-				}
-			});
-		}
+		// if (isChanged && TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendUrlDeletedEvent(mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcp.getId();
 	}
 
@@ -279,16 +278,16 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			mcpToolRepository.saveAll(tools);
 		}
 		//URL NPE 발생가능성있음...
-		if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
-			if (TransactionSynchronizationManager.isSynchronizationActive()) {
-				TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-					@Override
-					public void afterCommit() {
-						producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
-					}
-				});
-			}
-		}
+		// if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
+		// 	if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 			@Override
+		// 			public void afterCommit() {
+		// 				producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
+		// 			}
+		// 		});
+		// 	}
+		// }
 		return mcpRepository.save(mcp).getId();
 	}
 
@@ -305,14 +304,14 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		mcp.delete();
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					producerService.sendUrlDeletedEvent(mcpId);
-				}
-			});
-		}
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendUrlDeletedEvent(mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcpRepository.save(mcp).getId();
 	}
 }

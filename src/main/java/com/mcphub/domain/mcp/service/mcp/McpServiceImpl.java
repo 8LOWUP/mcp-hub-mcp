@@ -7,7 +7,6 @@ import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.UserMcp;
 import com.mcphub.domain.mcp.repository.jsp.UserMcpRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
-import com.mcphub.domain.mcp.producer.ProducerService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,7 @@ public class McpServiceImpl implements McpService {
 	private final McpRepository mcpRepository;
 	private final UserMcpRepository userMcpRepository;
 	private final McpDslRepository mcpDslRepository;
-	private final ProducerService producerService;
+	//private final ProducerService producerService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -71,14 +70,14 @@ public class McpServiceImpl implements McpService {
 
 		UserMcp saved = userMcpRepository.save(newUserMcp);
 
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					producerService.sendMcpSavedEvent(userId, mcpId);
-				}
-			});
-		}
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendMcpSavedEvent(userId, mcpId);
+		// 		}
+		// 	});
+		// }
 
 		return saved.getId();
 	}
@@ -93,14 +92,14 @@ public class McpServiceImpl implements McpService {
 		if (deleted == 0) {
 			throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
 		}
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					producerService.sendMcpDeletedEvent(userId, mcpId);
-				}
-			});
-		}
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendMcpDeletedEvent(userId, mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcp.getId();
 	}
 

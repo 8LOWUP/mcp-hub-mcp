@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
+    id "com.google.protobuf" version "0.9.4"
 }
 
 group = 'mcphub'
@@ -21,6 +22,23 @@ configurations {
 
 repositories {
     mavenCentral()
+}
+
+/* for gRPC */
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.64.0'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
 }
 
 dependencies {
@@ -95,6 +113,15 @@ dependencies {
     implementation 'com.anthropic:anthropic-java:2.6.0'
 
     implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+
+    //grpc
+    implementation platform("io.grpc:grpc-bom:1.64.0")
+    runtimeOnly 'io.grpc:grpc-netty-shaded:1.64.0'
+    implementation 'io.grpc:grpc-protobuf:1.64.0'
+    implementation 'io.grpc:grpc-stub:1.64.0'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+    //server grpc
+    implementation "net.devh:grpc-client-spring-boot-starter:2.15.0.RELEASE"
 }
 
 tasks.named('test') {
