@@ -11,7 +11,8 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class McpUrlRequest {
-
-	private String url;   // MCP 서버 URL
+public class McpReviewRequest {
+	private String userName;
+	private double rating;
+	private String comment;
 }

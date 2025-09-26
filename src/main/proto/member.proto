@@ -1,0 +1,40 @@
+// gRPC 서비스 정의
+// 1) .proto 파일은 src/main/proto 경로 아래 작성합니다.
+// 2) 작성 후 ./gradlew build 실행하면 자동으로 Java 소스코드가 생성됩니다.
+// 3) 생성된 자바 소스코드는 build/generated/source/proto/main 아래에 생성됩니다.
+
+syntax = "proto3";
+
+// 여러 클래스 파일로 나눠서 생성할지 여부 (권장: true)
+option java_multiple_files = true;
+
+// 생성될 자바 클래스의 패키지명
+option java_package = "com.mcphub.domain.member.grpc";
+
+// .proto 파일로 생성될 클래스 파일명
+option java_outer_classname = "MemberProto";
+
+// gRPC 통신에서 사용하는 네임스페이스
+package member;
+
+// 서비스 정의
+service MemberService {
+  // 단일 요청-응답
+  // userId 리스트로 요청하고, 여러 UserInfo를 응답
+  rpc GetMemberInfo (GetMemberInfoRequest) returns (MemberResponse);
+
+  // rpc StreamUserInfo (GetUserInfoRequest) returns (stream UserResponse); // Server streaming
+  // rpc UploadUsers (stream GetUserInfoRequest) returns (UserResponse);    // Client streaming
+  // rpc ChatWithUser (stream GetUserInfoRequest) returns (stream UserResponse); // Bidirectional
+}
+
+// 요청 메시지 (클라이언트 -> 서버)
+message GetMemberInfoRequest {
+  int64 userId = 1;
+}
+
+// 응답 메시지 (서버 -> 클라이언트)
+message MemberResponse {
+  int64 userId = 1;
+  string name = 2;
+}

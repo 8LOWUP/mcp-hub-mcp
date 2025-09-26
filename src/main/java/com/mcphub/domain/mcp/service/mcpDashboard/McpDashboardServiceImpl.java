@@ -18,7 +18,6 @@ import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
-import com.mcphub.global.common.base.BaseResponse;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +25,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -38,8 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class McpDashboardServiceImpl implements McpDashboardService {
 
-	@Value("${spring.web.resources.static-locations}")
-	private String uploadDir;
+	//TODO
+	private String uploadDir = "";
 
 	private final String imageUrl = "http:localhost:8081/images/";
 	private final McpDslRepository mcpDslRepository;
@@ -48,6 +49,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
+	//private final ProducerService producerService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -103,7 +105,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-
+		//true에서 false로 전환시에만 이벤트 발생
+		boolean isChanged = Boolean.TRUE.equals(mcp.getIsPublished());
 		if (!mcp.getUserId().equals(userId)) {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
@@ -178,7 +181,14 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-
+		// if (isChanged && TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendUrlDeletedEvent(mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcp.getId();
 	}
 
@@ -187,7 +197,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-
+		boolean isChanged = Boolean.FALSE.equals(mcp.getIsPublished());
 		if (!mcp.getUserId().equals(userId)) {
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
@@ -267,6 +277,17 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
+		//URL NPE 발생가능성있음...
+		// if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
+		// 	if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 			@Override
+		// 			public void afterCommit() {
+		// 				producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
+		// 			}
+		// 		});
+		// 	}
+		// }
 		return mcpRepository.save(mcp).getId();
 	}
 
@@ -278,11 +299,19 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
+			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
 			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 		}
 
 		mcp.delete();
-
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendUrlDeletedEvent(mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcpRepository.save(mcp).getId();
 	}
 }

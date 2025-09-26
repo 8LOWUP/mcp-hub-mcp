@@ -36,6 +36,6 @@ public class UserMcp extends BaseEntity {
 	@JoinColumn(name = "mcp_id", nullable = false)
 	private Mcp mcp;
 
-	@Column(name = "mcp_token", nullable = true, columnDefinition = "TEXT")
-	private String mcpToken;
+	@Column(name = "platform_id", nullable = true, columnDefinition = "TEXT")
+	private Long platformId;
 }

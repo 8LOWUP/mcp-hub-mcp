@@ -5,7 +5,6 @@ import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.UserMcp;
-import com.mcphub.domain.mcp.repository.jsp.McpReviewRepository;
 import com.mcphub.domain.mcp.repository.jsp.UserMcpRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
 import com.mcphub.global.common.exception.RestApiException;
@@ -15,23 +14,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.mcphub.domain.mcp.dto.response.readmodel.TestReadDto;
 import com.mcphub.domain.mcp.entity.Mcp;
-import com.mcphub.domain.mcp.mapper.McpMapper;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class McpServiceImpl implements McpService {
 
-	private final McpMapper mcpMapper;
 	private final McpRepository mcpRepository;
-	private final McpReviewRepository mcpReviewRepository;
 	private final UserMcpRepository userMcpRepository;
 	private final McpDslRepository mcpDslRepository;
+	//private final ProducerService producerService;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -68,9 +65,21 @@ public class McpServiceImpl implements McpService {
 		UserMcp newUserMcp = UserMcp.builder()
 		                            .userId(userId)
 		                            .mcp(mcp)
+		                            .platformId(mcp.getPlatform().getId())
 		                            .build();
 
-		return userMcpRepository.save(newUserMcp).getId();
+		UserMcp saved = userMcpRepository.save(newUserMcp);
+
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendMcpSavedEvent(userId, mcpId);
+		// 		}
+		// 	});
+		// }
+
+		return saved.getId();
 	}
 
 	// 구매한 Mcp삭제
@@ -79,7 +88,18 @@ public class McpServiceImpl implements McpService {
 	public Long deleteMcp(Long userId, Long mcpId) {
 		Mcp mcp = mcpRepository.findById(mcpId)
 		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		userMcpRepository.deleteByUserIdAndMcp(userId, mcp);
+		int deleted = userMcpRepository.deleteByUserIdAndMcp(userId, mcp);
+		if (deleted == 0) {
+			throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
+		}
+		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+		// 		@Override
+		// 		public void afterCommit() {
+		// 			producerService.sendMcpDeletedEvent(userId, mcpId);
+		// 		}
+		// 	});
+		// }
 		return mcp.getId();
 	}
 

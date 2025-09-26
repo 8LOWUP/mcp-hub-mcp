@@ -1,99 +1,129 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.3.5'
-	id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id "com.google.protobuf" version "0.9.4"
 }
 
 group = 'mcphub'
 version = '0.0.1'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
+}
+
+/* for gRPC */
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.64.0'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:mysql'
 
-	// 스프링 시큐리티를 사용하기 위한 스타터 추가
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	testImplementation 'org.springframework.security:spring-security-test'
+    implementation 'org.springframework.kafka:spring-kafka'
+
+
+    // 스프링 시큐리티를 사용하기 위한 스타터 추가
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    testImplementation 'org.springframework.security:spring-security-test'
 
     // oauth2
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
-	//jwt 사용
-	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    //jwt 사용
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-	// 스웨거 사용
-	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
-	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.1.0'
+    // 스웨거 사용
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.2.0'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.1.0'
 
-	// AWS 서비스 의존성 추가
-	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+    // AWS 서비스 의존성 추가
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
-	// WebFlux 사용
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // WebFlux 사용
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-	// QueryDsl
-	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-	annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
-	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    // QueryDsl
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 
-	//엑셀파일 처리
-	implementation 'org.apache.poi:poi:4.1.2'
-	implementation 'org.apache.poi:poi-ooxml:4.1.2'
-	implementation 'commons-io:commons-io:2.11.0'
+    //엑셀파일 처리
+    implementation 'org.apache.poi:poi:4.1.2'
+    implementation 'org.apache.poi:poi-ooxml:4.1.2'
+    implementation 'commons-io:commons-io:2.11.0'
 
-	//json path
-	implementation 'com.jayway.jsonpath:json-path:2.6.0'
-	implementation 'com.auth0:java-jwt:3.18.2'
+    //json path
+    implementation 'com.jayway.jsonpath:json-path:2.6.0'
+    implementation 'com.auth0:java-jwt:3.18.2'
 
-	// Bucket4j Core
-	implementation 'com.bucket4j:bucket4j-core:8.7.1'
+    // Bucket4j Core
+    implementation 'com.bucket4j:bucket4j-core:8.7.1'
 
-	// Redis 기반의 Bucket4j 확장
-	implementation 'com.bucket4j:bucket4j-redis:8.7.1'
+    // Redis 기반의 Bucket4j 확장
+    implementation 'com.bucket4j:bucket4j-redis:8.7.1'
 
-	//google gemini
-	implementation 'com.google.genai:google-genai:1.15.0'
+    //google gemini
+    implementation 'com.google.genai:google-genai:1.15.0'
 
-	//OpenAI
-	implementation 'com.openai:openai-java:3.5.0'
+    //OpenAI
+    implementation 'com.openai:openai-java:3.5.0'
 
-	//Anthropic
-	implementation 'com.anthropic:anthropic-java:2.6.0'
+    //Anthropic
+    implementation 'com.anthropic:anthropic-java:2.6.0'
 
-	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+    implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+
+    //grpc
+    implementation platform("io.grpc:grpc-bom:1.64.0")
+    runtimeOnly 'io.grpc:grpc-netty-shaded:1.64.0'
+    implementation 'io.grpc:grpc-protobuf:1.64.0'
+    implementation 'io.grpc:grpc-stub:1.64.0'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+    //server grpc
+    implementation "net.devh:grpc-client-spring-boot-starter:2.15.0.RELEASE"
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
