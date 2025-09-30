@@ -1,9 +1,8 @@
 package com.mcphub.config;
 
 import io.sentry.Sentry;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Profile;
 
 import jakarta.annotation.PostConstruct;
 
