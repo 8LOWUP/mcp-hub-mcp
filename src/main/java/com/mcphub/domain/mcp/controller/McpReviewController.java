@@ -32,7 +32,7 @@ public class McpReviewController {
 
 	private final McpReviewAdviser mcpReviewAdviser;
 
-	@Operation(summary = "MCP 리뷰 조회", description = "해당 MCP의 리뷰를 조회한다")
+	@Operation(summary = "MCP 리뷰 조회", description = "해당 MCP의 리뷰를 조회한다", security = {})
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
