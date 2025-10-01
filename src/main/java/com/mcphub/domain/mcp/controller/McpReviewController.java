@@ -8,6 +8,7 @@ import com.mcphub.global.common.base.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,7 +40,7 @@ public class McpReviewController {
 		@ApiResponse(responseCode = "404", description = "MCP가 존재하지않음")
 	})
 	@GetMapping("/{mcpId}")
-	public BaseResponse<Page<McpReviewResponse>> getReviewList(@PathVariable Long mcpId, @ModelAttribute
+	public BaseResponse<Page<McpReviewResponse>> getReviewList(@PathVariable Long mcpId, @Valid @ModelAttribute
 	McpReviewListRequest request) {
 		Pageable pageable = PageRequest.of(
 			request.getPage(),

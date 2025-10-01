@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +51,7 @@ public class McpDashboardController {
 	})
 	@GetMapping()
 	public BaseResponse<Page<McpResponse>> getMyUploadMcpList(
-		@Parameter(description = "검색/필터 조건") @ModelAttribute McpListRequest request) {
+		@Parameter(description = "검색/필터 조건") @Valid @ModelAttribute McpListRequest request) {
 		Pageable pageable = PageRequest.of(
 			request.getPage(),
 			Math.min(request.getSize(), 50),
