@@ -81,6 +81,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long createMcpDraft(Long userId, McpDraftRequest request) {
 		Mcp mcp = new Mcp();
 		mcp.setUserId(userId);
+		mcp.setName(request.getName());
 		mcp.setIsPublished(false);
 		return mcpRepository.save(mcp).getId();
 	}
@@ -192,6 +193,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		return mcp.getId();
 	}
 
+	//TODO 배포시 필수로 필요한 것들 저장하게 해야함
 	@Override
 	@Transactional
 	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {

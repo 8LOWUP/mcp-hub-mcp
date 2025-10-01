@@ -96,21 +96,21 @@ public class McpDashboardController {
 
 	//TODO 프론트에서 조회
 	@GetMapping("/category")
-	@Operation(summary = "카테고리 조회", description = "MCP 카테고리 목록을 조회합니다.")
+	@Operation(summary = "카테고리 조회", description = "MCP 카테고리 목록을 조회합니다.(미정의)")
 	public BaseResponse<CategoryResponse> getCategories() {
 		return BaseResponse.onSuccess(new CategoryResponse());
 	}
 
 	//TODO 프론트에서 조회
 	@GetMapping("/license")
-	@Operation(summary = "라이선스 조회", description = "MCP 라이선스 목록을 조회합니다.")
+	@Operation(summary = "라이선스 조회", description = "MCP 라이선스 목록을 조회합니다.(미정의)")
 	public BaseResponse<LicenseResponse> getLicenses() {
 		return BaseResponse.onSuccess(new LicenseResponse());
 	}
 
 	//TODO 확인 필요
 	@GetMapping("/platform")
-	@Operation(summary = "플랫폼 조회", description = "MCP 플랫폼 목록을 조회합니다.")
+	@Operation(summary = "플랫폼 조회", description = "MCP 플랫폼 목록을 조회합니다.(미정의)")
 	public BaseResponse<PlatformResponse> getPlatforms() {
 		return BaseResponse.onSuccess(new PlatformResponse());
 	}
@@ -121,7 +121,7 @@ public class McpDashboardController {
 	 * MCP Url 업로드
 	 * @return url 등록
 	 */
-	@Operation(summary = "MCP URL 등록", description = "MCP에 URL을 업로드합니다.")
+	@Operation(summary = "MCP URL 등록", description = "MCP에 URL을 업로드합니다.(사용 X)")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "URL 등록 성공"),
 		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
