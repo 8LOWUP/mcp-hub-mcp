@@ -44,7 +44,7 @@ public class McpController {
 	 * 마켓 -> MCP 리스트
 	 * @return 조건에 맞는 MCP 리스트
 	 */
-	@Operation(summary = "MCP 리스트 조회", description = "조건에 맞는 MCP 리스트를 페이징 처리하여 반환합니다.")
+	@Operation(summary = "MCP 리스트 조회", description = "조건에 맞는 MCP 리스트를 페이징 처리하여 반환합니다.", security = {})
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청 (파라미터 검증 실패)")
@@ -68,7 +68,7 @@ public class McpController {
 	 * @param mcpId
 	 * @return MCP 상세 내용
 	 */
-	@Operation(summary = "MCP 상세 조회", description = "특정 MCP의 상세 정보를 조회합니다.")
+	@Operation(summary = "MCP 상세 조회", description = "특정 MCP의 상세 정보를 조회합니다.", security = {})
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
 		@ApiResponse(responseCode = "404", description = "해당 MCP가 존재하지 않음")
