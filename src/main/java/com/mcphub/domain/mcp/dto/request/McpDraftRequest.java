@@ -12,5 +12,5 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class McpDraftRequest {
-	private String title;       // MCP 드래프트 타이틀
+	private String name;       // MCP 드래프트 타이틀
 }

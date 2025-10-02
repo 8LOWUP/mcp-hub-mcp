@@ -50,3 +50,6 @@ out/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+### resource 파일 깃허브에 x
+src/main/resources/

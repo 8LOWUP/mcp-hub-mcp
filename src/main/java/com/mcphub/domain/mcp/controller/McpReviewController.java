@@ -8,6 +8,7 @@ import com.mcphub.global.common.base.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,14 +33,14 @@ public class McpReviewController {
 
 	private final McpReviewAdviser mcpReviewAdviser;
 
-	@Operation(summary = "MCP 리뷰 조회", description = "해당 MCP의 리뷰를 조회한다")
+	@Operation(summary = "MCP 리뷰 조회", description = "해당 MCP의 리뷰를 조회한다", security = {})
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "조회 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
 		@ApiResponse(responseCode = "404", description = "MCP가 존재하지않음")
 	})
 	@GetMapping("/{mcpId}")
-	public BaseResponse<Page<McpReviewResponse>> getReviewList(@PathVariable Long mcpId, @ModelAttribute
+	public BaseResponse<Page<McpReviewResponse>> getReviewList(@PathVariable Long mcpId, @Valid @ModelAttribute
 	McpReviewListRequest request) {
 		Pageable pageable = PageRequest.of(
 			request.getPage(),
