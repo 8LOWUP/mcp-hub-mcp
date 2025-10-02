@@ -21,7 +21,7 @@ public class McpDetailResponse {
 	private String sourceUrl;
 	private String imageUrl;
 	private Boolean isKeyRequired;
-
+	private String developerName;
 	private String categoryName;
 	private String platformName;
 	private String licenseName;

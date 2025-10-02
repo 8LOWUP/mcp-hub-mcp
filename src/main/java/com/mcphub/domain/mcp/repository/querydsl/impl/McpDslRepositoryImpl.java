@@ -123,7 +123,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.imageUrl,
 				mcp.sourceUrl,
 				mcp.isKeyRequired,
-
+				mcp.developerName,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
 				platform.id.as("platformId"),

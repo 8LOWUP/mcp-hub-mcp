@@ -23,7 +23,7 @@ public class McpReadModel {
 	private String imageUrl;
 	private String sourceUrl;
 	private Boolean isKeyRequired;
-
+	private String developerName;
 	private Long categoryId;
 	private String categoryName;
 	private Long platformId;
