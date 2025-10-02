@@ -20,9 +20,9 @@ public interface McpDashboardService {
 
 	Long uploadMcpUrl(Long userId, Long mcpId, McpUrlRequest request);
 
-	Long uploadMcpMetaData(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file);
+	Long uploadMcpMetaData(Long userId, McpUploadDataRequest request, MultipartFile file);
 
-	Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file);
+	Long publishMcp(Long userId, McpUploadDataRequest request, MultipartFile file);
 
 	Long deleteMcp(Long userId, Long mcpId);
 }

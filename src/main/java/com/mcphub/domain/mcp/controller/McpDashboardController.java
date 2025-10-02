@@ -80,62 +80,6 @@ public class McpDashboardController {
 	}
 
 	/**
-	 * MCP 등록 드래프트 생성
-	 * @return 드래프트 생성
-	 */
-	@Operation(summary = "MCP 드래프트 생성", description = "새로운 MCP 등록을 위한 드래프트를 생성합니다.")
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "드래프트 생성 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청 데이터")
-	})
-	@PostMapping()
-	public BaseResponse<Long> createMCPDraft(
-		@Parameter(description = "드래프트 요청 데이터") @RequestBody McpDraftRequest request) {
-		Long mcpId = mcpDashboardAdviser.createMcpDraft(request);
-		return BaseResponse.onSuccess(mcpId);
-	}
-
-	//TODO 프론트에서 조회
-	@GetMapping("/category")
-	@Operation(summary = "카테고리 조회", description = "MCP 카테고리 목록을 조회합니다.(미정의)")
-	public BaseResponse<CategoryResponse> getCategories() {
-		return BaseResponse.onSuccess(new CategoryResponse());
-	}
-
-	//TODO 프론트에서 조회
-	@GetMapping("/license")
-	@Operation(summary = "라이선스 조회", description = "MCP 라이선스 목록을 조회합니다.(미정의)")
-	public BaseResponse<LicenseResponse> getLicenses() {
-		return BaseResponse.onSuccess(new LicenseResponse());
-	}
-
-	//TODO 확인 필요
-	@GetMapping("/platform")
-	@Operation(summary = "플랫폼 조회", description = "MCP 플랫폼 목록을 조회합니다.(미정의)")
-	public BaseResponse<PlatformResponse> getPlatforms() {
-		return BaseResponse.onSuccess(new PlatformResponse());
-	}
-
-	//TODO 메타데이터에 합칠 예정
-
-	/**
-	 * MCP Url 업로드
-	 * @return url 등록
-	 */
-	@Operation(summary = "MCP URL 등록", description = "MCP에 URL을 업로드합니다.(사용 X)")
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "URL 등록 성공"),
-		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
-		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
-		@ApiResponse(responseCode = "404", description = "MCP를 찾을 수 없음")
-	})
-	@PatchMapping("/{mcpId}/url")
-	public BaseResponse<Long> uploadMCPUrl(@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
-	                                       @Parameter(description = "메타데이터 요청 데이터") @RequestBody McpUrlRequest request) {
-		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpUrl(mcpId, request));
-	}
-
-	/**
 	 * MCP 메타 데이터 등록
 	 * @return Mcp 메타 데이터 등록
 	 */
@@ -143,16 +87,16 @@ public class McpDashboardController {
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "메타데이터 등록 성공"),
 		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
+		@ApiResponse(responseCode = "401", description = "로그인 필요 서비스"),
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP/카테고리/플랫폼/라이선스가 존재하지 않음")
 	})
-	@PatchMapping("/{mcpId}/meta")
+	@PatchMapping("/meta")
 	public BaseResponse<Long> uploadMcpMetaData(
-		@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
 		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
 		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
 
-		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(mcpId, request, file));
+		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(request, file));
 	}
 
 	/**
@@ -163,14 +107,15 @@ public class McpDashboardController {
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "배포 상태 변경 성공"),
 		@ApiResponse(responseCode = "400", description = "올바르지않은 요청"),
+		@ApiResponse(responseCode = "401", description = "로그인 필요 서비스"),
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP를 찾을 수 없음")
 	})
-	@PatchMapping("/{mcpId}/publish")
-	public BaseResponse<Long> publishMcp(@Parameter(description = "MCP ID", required = true) @PathVariable Long mcpId,
-	                                     @Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
-	                                     @Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
-		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(mcpId, request, file));
+	@PatchMapping("/publish")
+	public BaseResponse<Long> publishMcp(
+		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
+		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(request, file));
 	}
 
 	/**

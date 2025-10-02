@@ -102,14 +102,16 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 	@Override
 	@Transactional
-	public Long uploadMcpMetaData(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
-
-		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		//true에서 false로 전환시에만 이벤트 발생
-		boolean isChanged = Boolean.TRUE.equals(mcp.getIsPublished());
-		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+	public Long uploadMcpMetaData(Long userId, McpUploadDataRequest request, MultipartFile file) {
+		Mcp mcp;
+		if (request.getMcpId() == null) {
+			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
+		} else {
+			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
+			                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+			if (!mcp.getUserId().equals(userId)) {
+				throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			}
 		}
 
 		try {
@@ -122,7 +124,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				}
 
 				// mcpId 기반 저장 파일명 생성
-				String fileName = mcpId.toString() + ext;
+				String fileName = mcp.getId().toString() + ext;
 				mcp.setImageUrl(imageUrl + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
@@ -193,15 +195,18 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		return mcp.getId();
 	}
 
-	//TODO 배포시 필수로 필요한 것들 저장하게 해야함
 	@Override
 	@Transactional
-	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
-		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		boolean isChanged = Boolean.FALSE.equals(mcp.getIsPublished());
-		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+	public Long publishMcp(Long userId, McpUploadDataRequest request, MultipartFile file) {
+		Mcp mcp;
+		if (request.getMcpId() == null) {
+			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
+		} else {
+			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
+			                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+			if (!mcp.getUserId().equals(userId)) {
+				throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			}
 		}
 		try {
 			if (file != null && !file.isEmpty()) {
@@ -213,7 +218,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				}
 
 				// mcpId 기반 저장 파일명 생성
-				String fileName = mcpId.toString() + ext;
+				String fileName = mcp.getId().toString() + ext;
 				mcp.setImageUrl(imageUrl + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)

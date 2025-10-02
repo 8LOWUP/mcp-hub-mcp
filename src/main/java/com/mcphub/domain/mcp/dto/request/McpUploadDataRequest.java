@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class McpUploadDataRequest {
-
+	private Long mcpId;
 	private String name;
 	//private String version;
 	private String description;

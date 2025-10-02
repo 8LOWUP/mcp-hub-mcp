@@ -10,6 +10,8 @@ import com.mcphub.domain.mcp.dto.response.api.McpUrlResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
+import com.mcphub.global.common.exception.RestApiException;
+import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import com.mcphub.global.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,14 +50,20 @@ public class McpDashboardAdviser {
 		return mcpDashboardService.uploadMcpUrl(userId, mcpId, request);
 	}
 
-	public Long uploadMcpMetaData(Long mcpId, McpUploadDataRequest request, MultipartFile file) {
+	public Long uploadMcpMetaData(McpUploadDataRequest request, MultipartFile file) {
 		Long userId = securityUtils.getUserId();
-		return mcpDashboardService.uploadMcpMetaData(userId, mcpId, request, file);
+		if (userId == null) {
+			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
+		}
+		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
-	public Long publishMcp(Long mcpId, McpUploadDataRequest request, MultipartFile file) {
+	public Long publishMcp(McpUploadDataRequest request, MultipartFile file) {
 		Long userId = securityUtils.getUserId();
-		return mcpDashboardService.publishMcp(userId, mcpId, request, file);
+		if (userId == null) {
+			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
+		}
+		return mcpDashboardService.publishMcp(userId, request, file);
 	}
 
 	public Long deleteMcp(Long mcpId) {
