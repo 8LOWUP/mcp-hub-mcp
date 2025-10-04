@@ -19,15 +19,14 @@ public class McpUploadDataRequest {
 	//private String version;
 	private String description;
 	private Long categoryId;
+	private Long licenseId;
 	private String sourceUrl;
 	private String imageUrl;
 	//private String version;
 	//플랫폼 이름으로 서치
-	//private Long platformId;
-	private String requestUrl;
 	private String platformName;
+	private String requestUrl;
 	private String developerName;
 	private Boolean isKeyRequired;
-	private Long licenseId;
 	private List<McpToolRequest> tools;
 }

@@ -62,6 +62,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 		                               .mcp(mcp)
 		                               .userId(userId)
 		                               .rating(request.getRating())
+		                               .content(request.getComment())
 		                               .build();
 		return mcpReviewRepository.save(mcpReview).getId();
 	}
@@ -107,7 +108,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 			String userName = memberGrpcClient.getUserName(userId);
 
 			// 3. Redis에 캐싱 (테스트를 위해 10초로 임시 저장)
-			redisTemplate.opsForValue().set("cached_member:"+userId.toString(), userName, 10, TimeUnit.SECONDS);
+			redisTemplate.opsForValue().set("cached_member:" + userId.toString(), userName, 10, TimeUnit.SECONDS);
 
 			return userName;
 		} catch (Exception e) {

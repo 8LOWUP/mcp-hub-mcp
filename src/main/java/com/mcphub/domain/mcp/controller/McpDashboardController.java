@@ -80,6 +80,22 @@ public class McpDashboardController {
 	}
 
 	/**
+	 * 플랫폼 리스트 반환
+	 * @return 플랫폼
+	 */
+	@Operation(summary = "MCP 플랫폼 리스트 (구현 예정)", description = "플랫폼 리스트를 반환합니다")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "플랫폼 리턴 성공")
+	})
+	@PatchMapping("/platform")
+	public BaseResponse<Long> getPlatform(
+		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
+		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+
+		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(request, file));
+	}
+
+	/**
 	 * MCP 메타 데이터 등록
 	 * @return Mcp 메타 데이터 등록
 	 */
