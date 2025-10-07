@@ -9,6 +9,10 @@ import com.mcphub.domain.mcp.dto.response.api.McpResponse;
 import com.mcphub.domain.mcp.dto.response.api.McpUrlResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
+import com.mcphub.domain.mcp.entity.McpVector;
+import com.mcphub.domain.mcp.service.DocumentProcessorService;
+import com.mcphub.domain.mcp.service.EmbeddingService;
+import com.mcphub.domain.mcp.service.VectorSearchService;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
@@ -19,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class McpDashboardAdviser {
@@ -26,8 +32,11 @@ public class McpDashboardAdviser {
 	private final McpDashboardService mcpDashboardService;
 	private final McpDashboardConverter mcpDashboardConverter;
 	private final SecurityUtils securityUtils;
+    private final DocumentProcessorService documentProcessorService;
+    private final VectorSearchService vectorSearchService;
+    private final EmbeddingService embeddingService;
 
-	public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
+    public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
 		Long userId = securityUtils.getUserId();
 		Page<McpReadModel> page = mcpDashboardService.getMyUploadMcpList(pageable, req, userId);
 		return page.map(mcpDashboardConverter::toMcpResponse);
@@ -55,6 +64,8 @@ public class McpDashboardAdviser {
 		if (userId == null) {
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
+        float[] embedding = embeddingService.embedText(request.getDescription());
+        documentProcessorService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(), embedding);
 		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
@@ -70,4 +81,18 @@ public class McpDashboardAdviser {
 		Long userId = securityUtils.getUserId();
 		return mcpDashboardService.deleteMcp(userId, mcpId);
 	}
+
+
+    //테스트용 임시 adviser
+    public String createMcp(Long mcpId, String name, String description) {
+        float[] embedding = embeddingService.embedText(description);
+        documentProcessorService.processAndSaveDocument(mcpId, name, description, embedding);
+        return mcpId.toString();
+    }
+
+    public String getMcpByText(String requestText) {
+        float[] embedding = embeddingService.embedText(requestText);
+        List<McpVector> mcpVectorList = vectorSearchService.searchByVector(embedding, 5);
+        return mcpVectorList.get(0).getMcpId().toString();
+    }
 }

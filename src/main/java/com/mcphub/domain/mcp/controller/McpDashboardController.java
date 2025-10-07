@@ -150,4 +150,16 @@ public class McpDashboardController {
 		Long deletedMcpId = mcpDashboardAdviser.deleteMcp(mcpId);
 		return BaseResponse.onSuccess(deletedMcpId);
 	}
+
+
+    //테스트용 임시 컨트롤러
+    @GetMapping("create/{mcpId}")
+    public BaseResponse<String> createMcp(@PathVariable Long mcpId, @RequestParam String name, @RequestParam String description) {
+        return BaseResponse.onSuccess(mcpDashboardAdviser.createMcp(mcpId, name, description));
+    }
+
+    @GetMapping("/vector")
+    public BaseResponse<String> getMcpByText(@RequestParam String requestText) {
+        return BaseResponse.onSuccess(mcpDashboardAdviser.getMcpByText(requestText));
+    }
 }
