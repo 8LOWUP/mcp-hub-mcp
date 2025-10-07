@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcpReview;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcphub.domain.mcp.dto.request.McpReviewListRequest;
 import com.mcphub.domain.mcp.dto.request.McpReviewRequest;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReviewReadModel;
@@ -20,6 +21,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -30,6 +34,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final McpRepository mcpRepository;
 	private final MemberGrpcClient memberGrpcClient;
+    private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -108,7 +113,18 @@ public class McpReviewServiceImpl implements McpReviewService {
 			String userName = memberGrpcClient.getUserName(userId);
 
 			// 3. Redis에 캐싱 (테스트를 위해 10초로 임시 저장)
-			redisTemplate.opsForValue().set("cached_member:" + userId.toString(), userName, 10, TimeUnit.SECONDS);
+            Map<String, Object> data = new HashMap<>();
+
+            // CDC 포맷 유지하면서 nickname만 실제값으로 채움
+            data.put("id", userId);
+            data.put("nickname", userName);
+
+            // JSON 문자열로 직렬화
+            String jsonValue = objectMapper.writeValueAsString(data);
+
+            // Redis에 저장 (TTL 10초 유지)
+            redisTemplate.opsForValue()
+                    .set("cached_member:" + userId, jsonValue, 10, TimeUnit.SECONDS);
 
 			return userName;
 		} catch (Exception e) {
