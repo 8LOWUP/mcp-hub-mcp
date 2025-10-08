@@ -1,19 +1,19 @@
 package com.mcphub.domain.mcp.adviser;
 
 import com.mcphub.domain.mcp.converter.McpDashboardConverter;
+import com.mcphub.domain.mcp.dto.RecommendationChat;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpUrlResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
+import com.mcphub.domain.mcp.dto.response.api.RecommendationResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.McpVector;
-import com.mcphub.domain.mcp.service.DocumentProcessorService;
-import com.mcphub.domain.mcp.service.EmbeddingService;
-import com.mcphub.domain.mcp.service.VectorSearchService;
+import com.mcphub.llm.GptService;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
+import com.mcphub.domain.mcp.service.mcpRecommendation.McpRecommendationService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import com.mcphub.global.util.SecurityUtils;
@@ -32,9 +32,8 @@ public class McpDashboardAdviser {
 	private final McpDashboardService mcpDashboardService;
 	private final McpDashboardConverter mcpDashboardConverter;
 	private final SecurityUtils securityUtils;
-    private final DocumentProcessorService documentProcessorService;
-    private final VectorSearchService vectorSearchService;
-    private final EmbeddingService embeddingService;
+    private final McpRecommendationService mcpRecommendationService;
+    private final GptService gptService;
 
     public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
 		Long userId = securityUtils.getUserId();
@@ -64,8 +63,8 @@ public class McpDashboardAdviser {
 		if (userId == null) {
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
-        float[] embedding = embeddingService.embedText(request.getDescription());
-        documentProcessorService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(), embedding);
+        float[] embedding = gptService.embedText(request.getDescription());
+        mcpRecommendationService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(), embedding);
 		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
@@ -85,14 +84,19 @@ public class McpDashboardAdviser {
 
     //테스트용 임시 adviser
     public String createMcp(Long mcpId, String name, String description) {
-        float[] embedding = embeddingService.embedText(description);
-        documentProcessorService.processAndSaveDocument(mcpId, name, description, embedding);
+        float[] embedding = gptService.embedText(description);
+        mcpRecommendationService.processAndSaveDocument(mcpId, name, description, embedding);
         return mcpId.toString();
     }
 
-    public String getMcpByText(String requestText) {
-        float[] embedding = embeddingService.embedText(requestText);
-        List<McpVector> mcpVectorList = vectorSearchService.searchByVector(embedding, 5);
-        return mcpVectorList.get(0).getMcpId().toString();
+    public RecommendationResponse getMcpByText(String message) {
+        RecommendationChat recommendationChat = gptService.chat(message);
+
+        float[] embedding = gptService.embedText(recommendationChat.requestText());
+        List<McpVector> mcpVectorList = mcpRecommendationService.searchByVector(embedding, 5);
+        return RecommendationResponse.builder()
+                .responseText(recommendationChat.responseText())
+                .mcpId(mcpVectorList.get(0).getMcpId().toString())
+                .build();
     }
 }

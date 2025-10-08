@@ -1,4 +1,4 @@
-package com.mcphub.domain.mcp.service;
+package com.mcphub.domain.mcp.service.mcpRecommendation;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -6,11 +6,11 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.mcphub.domain.mcp.entity.McpVector;
 import com.mcphub.domain.mcp.repository.elasticsearch.McpElasticsearchRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,15 +18,11 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@AllArgsConstructor
-public class VectorSearchService {
-
+@RequiredArgsConstructor
+public class McpRecommendationServiceImpl implements McpRecommendationService {
     private final ElasticsearchClient elasticsearchClient;
     private final McpElasticsearchRepository repository;
 
-    /**
-     * K-Nearest Neighbor (KNN) 벡터 검색
-     */
     public List<McpVector> searchByVector(float[] queryVector, int k) {
         try {
             // 1. SearchRequest 생성
@@ -76,6 +72,12 @@ public class VectorSearchService {
         }
 
         return Collections.emptyList();
+    }
+
+    @Transactional
+    public McpVector processAndSaveDocument(Long mcpId, String title, String description, float[] embedding) {
+        McpVector mcpVector = new McpVector(mcpId, title, description, embedding);
+        return repository.save(mcpVector);
     }
 
     private List<Float> toFloatList(float[] vector) {
