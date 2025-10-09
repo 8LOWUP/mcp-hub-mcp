@@ -39,10 +39,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class McpDashboardServiceImpl implements McpDashboardService {
 
-	//TODO
-	private String uploadDir = "";
+	//TODO prod 올릴 때 해당 경로 존재해야함 + yml 수정
+	@Value("${spring.file.upload-dir}")
+	private String uploadDir;
 
-	private final String imageUrl = "http:localhost:8081/images/";
 	private final McpDslRepository mcpDslRepository;
 	private final McpRepository mcpRepository;
 	private final PlatformRepository platformRepository;
@@ -125,7 +125,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 				// mcpId 기반 저장 파일명 생성
 				String fileName = mcp.getId().toString() + ext;
-				mcp.setImageUrl(imageUrl + fileName);
+				mcp.setImageUrl("/mcps/images/" + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
 				File directory = new File(uploadDir.replace("file:", ""));
@@ -219,7 +219,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 				// mcpId 기반 저장 파일명 생성
 				String fileName = mcp.getId().toString() + ext;
-				mcp.setImageUrl(imageUrl + fileName);
+				mcp.setImageUrl("/mcps/images/" + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
 				File directory = new File(uploadDir.replace("file:", ""));
