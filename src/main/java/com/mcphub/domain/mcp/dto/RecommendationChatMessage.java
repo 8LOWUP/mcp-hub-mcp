@@ -1,6 +1,6 @@
 package com.mcphub.domain.mcp.dto;
 
-public record RecommendationChat(
+public record RecommendationChatMessage(
         String requestText,
         String responseText
 ) {

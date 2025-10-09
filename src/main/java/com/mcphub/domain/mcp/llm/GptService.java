@@ -1,6 +1,8 @@
-package com.mcphub.llm;
+package com.mcphub.domain.mcp.llm;
 
-import com.mcphub.domain.mcp.dto.RecommendationChat;
+import com.mcphub.domain.mcp.dto.RecommendationChatMessage;
+import com.mcphub.global.common.exception.RestApiException;
+import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -90,7 +92,7 @@ public class GptService {
         return new float[0];
     }
 
-    public RecommendationChat chat(String text) {
+    public RecommendationChatMessage toRequestAndResponseMessage(String text) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -117,12 +119,11 @@ public class GptService {
             String requestText = contentJson.get("requestText").asText();
             String responseText = contentJson.get("responseText").asText();
 
-            return  new RecommendationChat(requestText, responseText);
+            return new RecommendationChatMessage(requestText, responseText);
 
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
         }
-        return new RecommendationChat("", "");
     }
 
     private String generatePrompt(String text) {

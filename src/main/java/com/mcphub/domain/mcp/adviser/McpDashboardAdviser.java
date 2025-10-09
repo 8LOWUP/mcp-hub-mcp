@@ -1,17 +1,14 @@
 package com.mcphub.domain.mcp.adviser;
 
 import com.mcphub.domain.mcp.converter.McpDashboardConverter;
-import com.mcphub.domain.mcp.dto.RecommendationChat;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
-import com.mcphub.domain.mcp.dto.response.api.RecommendationResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
-import com.mcphub.domain.mcp.entity.McpVector;
-import com.mcphub.llm.GptService;
+import com.mcphub.domain.mcp.llm.GptService;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
 import com.mcphub.domain.mcp.service.mcpRecommendation.McpRecommendationService;
 import com.mcphub.global.common.exception.RestApiException;
@@ -22,8 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -82,21 +77,10 @@ public class McpDashboardAdviser {
 	}
 
 
-    //테스트용 임시 adviser
+    //TODO 테스트용 임시 adviser
     public String createMcp(Long mcpId, String name, String description) {
         float[] embedding = gptService.embedText(description);
         mcpRecommendationService.processAndSaveDocument(mcpId, name, description, embedding);
         return mcpId.toString();
-    }
-
-    public RecommendationResponse getMcpByText(String message) {
-        RecommendationChat recommendationChat = gptService.chat(message);
-
-        float[] embedding = gptService.embedText(recommendationChat.requestText());
-        List<McpVector> mcpVectorList = mcpRecommendationService.searchByVector(embedding, 5);
-        return RecommendationResponse.builder()
-                .responseText(recommendationChat.responseText())
-                .mcpId(mcpVectorList.get(0).getMcpId().toString())
-                .build();
     }
 }

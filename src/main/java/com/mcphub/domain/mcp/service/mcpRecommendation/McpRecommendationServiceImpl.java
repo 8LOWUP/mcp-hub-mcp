@@ -6,6 +6,8 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.mcphub.domain.mcp.entity.McpVector;
 import com.mcphub.domain.mcp.repository.elasticsearch.McpElasticsearchRepository;
+import com.mcphub.global.common.exception.RestApiException;
+import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -68,10 +70,8 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
             return results;
 
         } catch (Exception e) {
-            log.error("Vector search failed", e);
+            throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
         }
-
-        return Collections.emptyList();
     }
 
     @Transactional
