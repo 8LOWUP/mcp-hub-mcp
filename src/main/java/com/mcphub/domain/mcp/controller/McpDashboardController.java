@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/mcps/dashboard")
 @RequiredArgsConstructor
+@Slf4j
 public class McpDashboardController {
 
 	private final McpDashboardAdviser mcpDashboardAdviser;
@@ -109,7 +111,7 @@ public class McpDashboardController {
 	public BaseResponse<Long> uploadMcpMetaData(
 		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
 		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
-
+		log.info("=========== META START============");
 		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(request, file));
 	}
 

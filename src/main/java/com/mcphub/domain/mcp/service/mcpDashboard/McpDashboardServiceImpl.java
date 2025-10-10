@@ -21,6 +21,7 @@ import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class McpDashboardServiceImpl implements McpDashboardService {
 
 	//TODO prod 올릴 때 해당 경로 존재해야함 + yml 수정
@@ -104,19 +106,24 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Override
 	@Transactional
 	public Long uploadMcpMetaData(Long userId, McpUploadDataRequest request, MultipartFile file) {
+		log.info("============= Meta Service Start  ===========");
 		Mcp mcp;
 		if (request.getMcpId() == null) {
+			log.info("NO MCP DATA");
 			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
 		} else {
+			log.info("ALREADY MCP DATA");
 			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
 			                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
 			if (!mcp.getUserId().equals(userId)) {
+				log.info("SAVE MCP USER != USER_ID (differ)");
 				throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
 			}
 		}
 
 		try {
 			if (file != null && !file.isEmpty()) {
+				log.info("======= START SAVE FILE PROCESS ========");
 				// 원본 파일명에서 확장자 추출
 				String originalName = file.getOriginalFilename();   // 예: "logo.png"
 				String ext = "";
@@ -137,6 +144,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				// 최종 파일 저장
 				File dest = new File(directory, fileName);
 				file.transferTo(dest);
+				log.info("======= SAVE FILE PROCESS END ========");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -147,7 +155,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		Category category = categoryRepository.findById(request.getCategoryId())
-		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                      .orElse(null);
 		Platform platform = platformRepository.findByName(request.getPlatformName())
 		                                      .orElse(null);
 		if (platform == null) {
@@ -156,8 +164,12 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			platformRepository.save(platform);
 		}
 		License license = licenseRepository.findById(request.getLicenseId())
-		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                   .orElse(null);
 
+		if (request.getName() == null || request.getName().isEmpty()) {
+			log.info("--------------- PLEASE ENTER NAME");
+			throw new RestApiException(GlobalErrorStatus._NAME_PLEASE);
+		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
 		mcp.setDescription(request.getDescription());
@@ -241,7 +253,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		Category category = categoryRepository.findById(request.getCategoryId())
-		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                      .orElseThrow(
+			                                      () -> new RestApiException(GlobalErrorStatus._CATEGORY_PLEASE));
 		Platform platform = platformRepository.findByName(request.getPlatformName())
 		                                      .orElse(null);
 		if (platform == null) {
@@ -251,8 +264,11 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		License license = licenseRepository.findById(request.getLicenseId())
-		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._LICENCE_PLEASE));
 
+		if (request.getName() == null || request.getName().isEmpty()) {
+			throw new RestApiException(GlobalErrorStatus._NAME_PLEASE);
+		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
 		mcp.setDescription(request.getDescription());
