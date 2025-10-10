@@ -46,8 +46,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		}
 
 		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
 		// 정렬 조건
@@ -156,8 +156,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		}
 
 		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
 		// 정렬 조건
