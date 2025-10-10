@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcpReview;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mcphub.domain.mcp.dto.request.McpReviewListRequest;
 import com.mcphub.domain.mcp.dto.request.McpReviewRequest;
@@ -102,9 +103,18 @@ public class McpReviewServiceImpl implements McpReviewService {
 	private String getUserName(Long userId) {
 
 		log.info("---- redis 조회 -----");
-		Object cachedValue = redisTemplate.opsForValue().get(userId.toString());
+		Object cachedValue = redisTemplate.opsForValue().get("cached_member:" + userId.toString());
 		if (cachedValue != null) {
-			return cachedValue.toString();
+            try {
+                // cachedValue는 JSON 문자열이므로 JsonNode로 파싱
+                JsonNode node = objectMapper.readTree(cachedValue.toString());
+                String nickname = node.get("nickname").asText();
+                log.info("Redis 캐시에서 nickname 조회됨: {}", nickname);
+                return nickname;
+            } catch (Exception e) {
+                log.error("Redis 캐시 역직렬화 실패", e);
+                throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+            }
 		}
 
 		// 2. Redis에 없으면 gRPC 호출
@@ -129,7 +139,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 			return userName;
 		} catch (Exception e) {
 			log.error("유저 정보 조회 실패 userId={}", userId, e);
-			return "알 수 없음";
+            throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
 		}
 	}
 }
