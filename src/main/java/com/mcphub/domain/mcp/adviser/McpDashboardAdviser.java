@@ -75,12 +75,4 @@ public class McpDashboardAdviser {
 		Long userId = securityUtils.getUserId();
 		return mcpDashboardService.deleteMcp(userId, mcpId);
 	}
-
-
-    //TODO 테스트용 임시 adviser
-    public String createMcp(Long mcpId, String name, String description) {
-        float[] embedding = gptService.embedText(description);
-        mcpRecommendationService.processAndSaveDocument(mcpId, name, description, embedding);
-        return mcpId.toString();
-    }
 }
