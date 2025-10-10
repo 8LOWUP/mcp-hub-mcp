@@ -21,6 +21,6 @@ public class McpListRequest {
 	@Min(value = 1, message = "사이즈 크기는 번호는 1보다 작을 수 없습니다.")
 	private Integer size = 12;
 	private String sort;
-	private String category;
+	private Long category;
 	private String search;
 }
