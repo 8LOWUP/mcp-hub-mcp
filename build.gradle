@@ -78,6 +78,9 @@ dependencies {
 
     implementation 'org.springframework.kafka:spring-kafka'
 
+    //Elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
     // Sentry 의존성 추가
     implementation 'io.sentry:sentry-spring-boot-starter-jakarta:8.22.0'
     implementation 'io.sentry:sentry-logback:8.22.0'

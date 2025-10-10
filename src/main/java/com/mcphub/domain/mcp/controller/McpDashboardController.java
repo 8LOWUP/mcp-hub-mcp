@@ -2,11 +2,7 @@ package com.mcphub.domain.mcp.controller;
 
 import com.mcphub.domain.mcp.adviser.McpDashboardAdviser;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
-import com.mcphub.domain.mcp.dto.response.api.CategoryResponse;
-import com.mcphub.domain.mcp.dto.response.api.LicenseResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpResponse;
-import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
-import com.mcphub.domain.mcp.dto.response.api.PlatformResponse;
+import com.mcphub.domain.mcp.dto.response.api.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
