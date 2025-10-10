@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -320,5 +321,11 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		// 	});
 		// }
 		return mcpRepository.save(mcp).getId();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<String> getPlatform() {
+		return platformRepository.findAll().stream().map(Platform::getName).collect(Collectors.toList());
 	}
 }

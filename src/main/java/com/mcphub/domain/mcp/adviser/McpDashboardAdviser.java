@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class McpDashboardAdviser {
@@ -69,5 +71,9 @@ public class McpDashboardAdviser {
 	public Long deleteMcp(Long mcpId) {
 		Long userId = securityUtils.getUserId();
 		return mcpDashboardService.deleteMcp(userId, mcpId);
+	}
+
+	public List<String> getPlatform() {
+		return mcpDashboardService.getPlatform();
 	}
 }
