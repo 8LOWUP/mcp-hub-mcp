@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -107,10 +108,12 @@ public class McpDashboardController {
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP/카테고리/플랫폼/라이선스가 존재하지 않음")
 	})
-	@PatchMapping("/meta")
+	@PatchMapping(value = "/meta", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public BaseResponse<Long> uploadMcpMetaData(
-		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
-		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+		@Parameter(description = "MCP ICON", required = false)
+		@RequestPart(value = "file", required = false) MultipartFile file,
+		@Parameter(description = "메타데이터 JSON", required = true)
+		@RequestPart("meta") McpUploadDataRequest request) {
 		log.info("=========== META START============");
 		return BaseResponse.onSuccess(mcpDashboardAdviser.uploadMcpMetaData(request, file));
 	}
@@ -127,10 +130,12 @@ public class McpDashboardController {
 		@ApiResponse(responseCode = "403", description = "본인 소유가 아닌 MCP 접근"),
 		@ApiResponse(responseCode = "404", description = "MCP를 찾을 수 없음")
 	})
-	@PatchMapping("/publish")
+	@PatchMapping(value = "/publish", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public BaseResponse<Long> publishMcp(
-		@Parameter(description = "MCP ICON", required = false) @RequestParam("file") MultipartFile file,
-		@Parameter(description = "배포 요청 데이터") @RequestPart("meta") McpUploadDataRequest request) {
+		@Parameter(description = "MCP ICON", required = false)
+		@RequestPart(value = "file", required = false) MultipartFile file,
+		@Parameter(description = "배포 요청 데이터", required = true)
+		@RequestPart("meta") McpUploadDataRequest request) {
 		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(request, file));
 	}
 
