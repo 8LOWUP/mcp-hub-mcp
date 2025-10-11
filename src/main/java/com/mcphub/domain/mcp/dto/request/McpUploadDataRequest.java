@@ -21,7 +21,6 @@ public class McpUploadDataRequest {
 	private Long categoryId;
 	private Long licenseId;
 	private String sourceUrl;
-	private String imageUrl;
 	//private String version;
 	//플랫폼 이름으로 서치
 	private String platformName;

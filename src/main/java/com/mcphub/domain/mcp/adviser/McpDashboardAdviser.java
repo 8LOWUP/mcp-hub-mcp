@@ -6,10 +6,11 @@ import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpUrlResponse;
 import com.mcphub.domain.mcp.dto.response.api.MyUploadMcpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
+import com.mcphub.domain.mcp.llm.GptService;
 import com.mcphub.domain.mcp.service.mcpDashboard.McpDashboardService;
+import com.mcphub.domain.mcp.service.mcpRecommendation.McpRecommendationService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import com.mcphub.global.util.SecurityUtils;
@@ -30,8 +31,10 @@ public class McpDashboardAdviser {
 	private final McpDashboardService mcpDashboardService;
 	private final McpDashboardConverter mcpDashboardConverter;
 	private final SecurityUtils securityUtils;
+    private final McpRecommendationService mcpRecommendationService;
+    private final GptService gptService;
 
-	public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
+    public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
 		Long userId = securityUtils.getUserId();
 		Page<McpReadModel> page = mcpDashboardService.getMyUploadMcpList(pageable, req, userId);
 		return page.map(mcpDashboardConverter::toMcpResponse);
@@ -60,6 +63,8 @@ public class McpDashboardAdviser {
 			log.info("============= USER NAME IS NULL");
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
+        float[] embedding = gptService.embedText(request.getDescription());
+        mcpRecommendationService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(), embedding);
 		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
