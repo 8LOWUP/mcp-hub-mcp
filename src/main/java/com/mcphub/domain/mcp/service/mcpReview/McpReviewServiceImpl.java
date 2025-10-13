@@ -2,6 +2,7 @@ package com.mcphub.domain.mcp.service.mcpReview;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mcphub.domain.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpReviewListRequest;
 import com.mcphub.domain.mcp.dto.request.McpReviewRequest;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReviewReadModel;
@@ -35,13 +36,13 @@ public class McpReviewServiceImpl implements McpReviewService {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final McpRepository mcpRepository;
 	private final MemberGrpcClient memberGrpcClient;
-    private final ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional(readOnly = true)
 	public Page<McpReviewReadModel> getMcpReviewList(Pageable pageable, McpReviewListRequest request, Long mcpId) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 		Page<McpReview> reviews = mcpReviewRepository.findByMcp(mcp, pageable);
 
 		// 2. Page<McpReview> -> Page<McpReviewReadModel> 변환
@@ -63,7 +64,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 	@Transactional
 	public Long saveReview(Long userId, Long mcpId, McpReviewRequest request) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 		McpReview mcpReview = McpReview.builder()
 		                               .mcp(mcp)
 		                               .userId(userId)
@@ -77,10 +78,10 @@ public class McpReviewServiceImpl implements McpReviewService {
 	@Transactional
 	public Long updateReview(Long userId, Long reviewId, McpReviewRequest request) {
 		McpReview mcpReview = mcpReviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-		                                         .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                         .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcpReview.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 		mcpReview.setRating(request.getRating());
 		mcpReview.setContent(request.getComment());
@@ -91,10 +92,10 @@ public class McpReviewServiceImpl implements McpReviewService {
 	@Transactional
 	public Long deleteReview(Long userId, Long reviewId) {
 		McpReview mcpReview = mcpReviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-		                                         .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                         .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcpReview.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 		mcpReviewRepository.delete(mcpReview);
 		return reviewId;
@@ -105,16 +106,16 @@ public class McpReviewServiceImpl implements McpReviewService {
 		log.info("---- redis 조회 -----");
 		Object cachedValue = redisTemplate.opsForValue().get("cached_member:" + userId.toString());
 		if (cachedValue != null) {
-            try {
-                // cachedValue는 JSON 문자열이므로 JsonNode로 파싱
-                JsonNode node = objectMapper.readTree(cachedValue.toString());
-                String nickname = node.get("nickname").asText();
-                log.info("Redis 캐시에서 nickname 조회됨: {}", nickname);
-                return nickname;
-            } catch (Exception e) {
-                log.error("Redis 캐시 역직렬화 실패", e);
-                throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
-            }
+			try {
+				// cachedValue는 JSON 문자열이므로 JsonNode로 파싱
+				JsonNode node = objectMapper.readTree(cachedValue.toString());
+				String nickname = node.get("nickname").asText();
+				log.info("Redis 캐시에서 nickname 조회됨: {}", nickname);
+				return nickname;
+			} catch (Exception e) {
+				log.error("Redis 캐시 역직렬화 실패", e);
+				throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+			}
 		}
 
 		// 2. Redis에 없으면 gRPC 호출
@@ -123,23 +124,23 @@ public class McpReviewServiceImpl implements McpReviewService {
 			String userName = memberGrpcClient.getUserName(userId);
 
 			// 3. Redis에 캐싱 (테스트를 위해 10초로 임시 저장)
-            Map<String, Object> data = new HashMap<>();
+			Map<String, Object> data = new HashMap<>();
 
-            // CDC 포맷 유지하면서 nickname만 실제값으로 채움
-            data.put("id", userId);
-            data.put("nickname", userName);
+			// CDC 포맷 유지하면서 nickname만 실제값으로 채움
+			data.put("id", userId);
+			data.put("nickname", userName);
 
-            // JSON 문자열로 직렬화
-            String jsonValue = objectMapper.writeValueAsString(data);
+			// JSON 문자열로 직렬화
+			String jsonValue = objectMapper.writeValueAsString(data);
 
-            // Redis에 저장 (TTL 10초 유지)
-            redisTemplate.opsForValue()
-                    .set("cached_member:" + userId, jsonValue, 10, TimeUnit.SECONDS);
+			// Redis에 저장 (TTL 10초 유지)
+			redisTemplate.opsForValue()
+			             .set("cached_member:" + userId, jsonValue, 10, TimeUnit.SECONDS);
 
 			return userName;
 		} catch (Exception e) {
 			log.error("유저 정보 조회 실패 userId={}", userId, e);
-            throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
+			throw new RestApiException(McpErrorStatus._USER_NOT_FOUND);
 		}
 	}
 }

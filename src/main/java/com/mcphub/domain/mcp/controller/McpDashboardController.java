@@ -2,6 +2,7 @@ package com.mcphub.domain.mcp.controller;
 
 import com.mcphub.domain.mcp.adviser.McpDashboardAdviser;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
 import com.mcphub.domain.mcp.dto.response.api.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -131,7 +132,7 @@ public class McpDashboardController {
 		@Parameter(description = "MCP ICON", required = false)
 		@RequestPart(value = "file", required = false) MultipartFile file,
 		@Parameter(description = "배포 요청 데이터", required = true)
-		@RequestPart("meta") McpUploadDataRequest request) {
+		@RequestPart("meta") McpPublishDataRequest request) {
 		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(request, file));
 	}
 

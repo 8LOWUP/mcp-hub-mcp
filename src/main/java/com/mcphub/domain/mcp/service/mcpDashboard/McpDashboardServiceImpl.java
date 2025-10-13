@@ -1,7 +1,9 @@
 package com.mcphub.domain.mcp.service.mcpDashboard;
 
+import com.mcphub.domain.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
@@ -64,15 +66,15 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional(readOnly = true)
 	public MyUploadMcpDetailReadModel getUploadMcpDetail(Long userId, Long mcpId) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 
 		MyUploadMcpDetailReadModel rm = mcpDslRepository.getMyUploadMcpDetail(mcpId);
 		if (rm == null) {
-			throw new RestApiException((GlobalErrorStatus._NOT_FOUND));
+			throw new RestApiException((McpErrorStatus._NOT_FOUND));
 		}
 		List<McpToolResponse> tools = mcpDslRepository.getMcpTools(mcpId);
 		rm.setTools(tools);
@@ -93,10 +95,10 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional
 	public Long uploadMcpUrl(Long userId, Long mcpId, McpUrlRequest request) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 
 		mcp.setRequestUrl(request.getUrl());
@@ -114,13 +116,13 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		} else {
 			log.info("ALREADY MCP DATA");
 			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
-			                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+			                   .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 			if (!mcp.getUserId().equals(userId)) {
 				log.info("SAVE MCP USER != USER_ID (differ)");
-				throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+				throw new RestApiException(McpErrorStatus._FORBIDDEN);
 			}
 		}
-
+		mcp.setImageUrl(null);
 		try {
 			if (file != null && !file.isEmpty()) {
 				log.info("======= START SAVE FILE PROCESS ========");
@@ -168,7 +170,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 		if (request.getName() == null || request.getName().isEmpty()) {
 			log.info("--------------- PLEASE ENTER NAME");
-			throw new RestApiException(GlobalErrorStatus._NAME_PLEASE);
+			throw new RestApiException(McpErrorStatus._NAME_PLEASE);
 		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
@@ -210,17 +212,19 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 	@Override
 	@Transactional
-	public Long publishMcp(Long userId, McpUploadDataRequest request, MultipartFile file) {
+	public Long publishMcp(Long userId, McpPublishDataRequest request, MultipartFile file) {
 		Mcp mcp;
 		if (request.getMcpId() == null) {
 			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
 		} else {
 			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
-			                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+			                   .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 			if (!mcp.getUserId().equals(userId)) {
-				throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+				throw new RestApiException(McpErrorStatus._FORBIDDEN);
 			}
 		}
+
+		mcp.setImageUrl(null);
 		try {
 			if (file != null && !file.isEmpty()) {
 				// 원본 파일명에서 확장자 추출
@@ -254,7 +258,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 		Category category = categoryRepository.findById(request.getCategoryId())
 		                                      .orElseThrow(
-			                                      () -> new RestApiException(GlobalErrorStatus._CATEGORY_PLEASE));
+			                                      () -> new RestApiException(McpErrorStatus._CATEGORY_PLEASE));
 		Platform platform = platformRepository.findByName(request.getPlatformName())
 		                                      .orElse(null);
 		if (platform == null) {
@@ -264,10 +268,10 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		License license = licenseRepository.findById(request.getLicenseId())
-		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._LICENCE_PLEASE));
+		                                   .orElseThrow(() -> new RestApiException(McpErrorStatus._LICENCE_PLEASE));
 
 		if (request.getName() == null || request.getName().isEmpty()) {
-			throw new RestApiException(GlobalErrorStatus._NAME_PLEASE);
+			throw new RestApiException(McpErrorStatus._NAME_PLEASE);
 		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
@@ -320,11 +324,11 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long deleteMcp(Long userId, Long mcpId) {
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
 			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 
 		mcp.delete();

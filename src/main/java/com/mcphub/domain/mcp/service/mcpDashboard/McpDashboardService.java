@@ -2,6 +2,7 @@ package com.mcphub.domain.mcp.service.mcpDashboard;
 
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
@@ -24,7 +25,7 @@ public interface McpDashboardService {
 
 	Long uploadMcpMetaData(Long userId, McpUploadDataRequest request, MultipartFile file);
 
-	Long publishMcp(Long userId, McpUploadDataRequest request, MultipartFile file);
+	Long publishMcp(Long userId, McpPublishDataRequest request, MultipartFile file);
 
 	Long deleteMcp(Long userId, Long mcpId);
 

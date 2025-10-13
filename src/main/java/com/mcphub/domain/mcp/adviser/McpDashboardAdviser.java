@@ -3,6 +3,7 @@ package com.mcphub.domain.mcp.adviser;
 import com.mcphub.domain.mcp.converter.McpDashboardConverter;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
@@ -31,10 +32,10 @@ public class McpDashboardAdviser {
 	private final McpDashboardService mcpDashboardService;
 	private final McpDashboardConverter mcpDashboardConverter;
 	private final SecurityUtils securityUtils;
-    private final McpRecommendationService mcpRecommendationService;
-    private final GptService gptService;
+	private final McpRecommendationService mcpRecommendationService;
+	private final GptService gptService;
 
-    public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
+	public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
 		Long userId = securityUtils.getUserId();
 		Page<McpReadModel> page = mcpDashboardService.getMyUploadMcpList(pageable, req, userId);
 		return page.map(mcpDashboardConverter::toMcpResponse);
@@ -63,12 +64,13 @@ public class McpDashboardAdviser {
 			log.info("============= USER NAME IS NULL");
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
-        float[] embedding = gptService.embedText(request.getDescription());
-        mcpRecommendationService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(), embedding);
+		float[] embedding = gptService.embedText(request.getDescription());
+		mcpRecommendationService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(),
+			embedding);
 		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
-	public Long publishMcp(McpUploadDataRequest request, MultipartFile file) {
+	public Long publishMcp(McpPublishDataRequest request, MultipartFile file) {
 		Long userId = securityUtils.getUserId();
 		if (userId == null) {
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
