@@ -132,7 +132,7 @@ public class McpDashboardController {
 		@Parameter(description = "MCP ICON", required = false)
 		@RequestPart(value = "file", required = false) MultipartFile file,
 		@Parameter(description = "배포 요청 데이터", required = true)
-		@RequestPart("meta") McpPublishDataRequest request) {
+		@Valid @RequestPart("meta") McpPublishDataRequest request) {
 		return BaseResponse.onSuccess(mcpDashboardAdviser.publishMcp(request, file));
 	}
 
