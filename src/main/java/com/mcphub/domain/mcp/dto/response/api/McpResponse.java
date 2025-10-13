@@ -19,7 +19,7 @@ public class McpResponse {
 	private String description;
 	private String imageUrl;
 	private Boolean isKeyRequired;
-
+	private String developerName;
 	// 연관 엔티티
 	private String categoryName;
 	private String platformName;

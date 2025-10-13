@@ -76,6 +76,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
+				mcp.developerName.as("developerName"),
 				review.rating.avg().as("averageRating"),
 				userMcp.count().as("savedUserCount"),
 				mcp.isPublished,

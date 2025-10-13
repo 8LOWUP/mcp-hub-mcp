@@ -26,6 +26,7 @@ public class McpConverter {
 		                  .isKeyRequired(m.getIsKeyRequired())
 		                  .categoryName(m.getCategoryName())
 		                  .platformName(m.getPlatformName())
+		                  .developerName(m.getDeveloperName())
 		                  .licenseName(m.getLicenseName())
 		                  .averageRating(m.getAverageRating())
 		                  .savedUserCount(m.getSavedUserCount())
