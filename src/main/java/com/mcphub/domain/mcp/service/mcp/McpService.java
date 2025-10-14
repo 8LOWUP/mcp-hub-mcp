@@ -13,7 +13,7 @@ import java.util.List;
 
 public interface McpService {
 
-	McpReadModel getMcpDetail(Long id);
+	McpReadModel getMcpDetail(Long McpId, Long userId);
 
 	Page<McpReadModel> getMcpList(Pageable pageable, McpListRequest request);
 

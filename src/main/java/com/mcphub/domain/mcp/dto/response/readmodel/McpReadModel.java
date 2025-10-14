@@ -30,8 +30,8 @@ public class McpReadModel {
 	private String platformName;
 	private Long licenseId;
 	private String licenseName;
-    private String requestUrl;
-
+	private String requestUrl;
+	private boolean alreadySaved;
 	private Double averageRating;     // null 가능
 	private Long savedUserCount;
 	private boolean isPublished;

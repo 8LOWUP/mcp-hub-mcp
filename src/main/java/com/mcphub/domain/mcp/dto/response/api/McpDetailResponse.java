@@ -27,7 +27,7 @@ public class McpDetailResponse {
 	private String categoryName;
 	private String platformName;
 	private String licenseName;
-
+	private boolean alreadySaved;
 	private Double averageRating;
 	private Long savedUserCount;
 

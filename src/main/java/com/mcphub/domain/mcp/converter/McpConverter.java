@@ -44,14 +44,15 @@ public class McpConverter {
 		                        .isKeyRequired(m.getIsKeyRequired())
 		                        .categoryName(m.getCategoryName())
 		                        .platformName(m.getPlatformName())
-                                .developerName(m.getDeveloperName())
-                                .requestUrl(m.getRequestUrl())
-                                .sourceUrl(m.getSourceUrl())
-                                .publishDate(m.getPublishedAt().toLocalDate())
+		                        .developerName(m.getDeveloperName())
+		                        .requestUrl(m.getRequestUrl())
+		                        .sourceUrl(m.getSourceUrl())
+		                        .publishDate(m.getPublishedAt().toLocalDate())
 		                        .licenseName(m.getLicenseName())
 		                        .averageRating(m.getAverageRating())
 		                        .savedUserCount(m.getSavedUserCount())
 		                        .tools(m.getTools())
+		                        .alreadySaved(m.isAlreadySaved())
 		                        .build();
 	}
 

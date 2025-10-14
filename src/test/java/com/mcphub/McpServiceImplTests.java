@@ -56,7 +56,7 @@ public class McpServiceImplTests {
 		given(mcpDslRepository.getMcpTools(mcpId)).willReturn(mockTools);
 
 		// when
-		McpReadModel result = mcpService.getMcpDetail(mcpId);
+		McpReadModel result = mcpService.getMcpDetail(mcpId, 1L);
 
 		// then
 		assertThat(result.getId()).isEqualTo(mcpId);
@@ -70,7 +70,7 @@ public class McpServiceImplTests {
 		given(mcpDslRepository.getMcpDetail(mcpId)).willReturn(null);
 
 		// when & then
-		assertThatThrownBy(() -> mcpService.getMcpDetail(mcpId))
+		assertThatThrownBy(() -> mcpService.getMcpDetail(mcpId, 1L))
 			.isInstanceOf(RestApiException.class)
 			.hasMessageContaining(GlobalErrorStatus._NOT_FOUND.getMessage());
 	}
