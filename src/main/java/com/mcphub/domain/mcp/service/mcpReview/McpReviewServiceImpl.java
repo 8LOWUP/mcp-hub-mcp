@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class McpReviewServiceImpl implements McpReviewService {
 	private final McpReviewRepository mcpReviewRepository;
-	private final RedisTemplate<String, Object> redisTemplate;
+	private final RedisTemplate<String, String> redisTemplate;
 	private final McpRepository mcpRepository;
 	private final MemberGrpcClient memberGrpcClient;
 	private final ObjectMapper objectMapper;
