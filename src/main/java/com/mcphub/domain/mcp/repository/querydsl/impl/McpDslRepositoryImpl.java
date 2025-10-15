@@ -11,8 +11,10 @@ import com.mcphub.domain.mcp.entity.QMcpReview;
 import com.mcphub.domain.mcp.entity.QPlatform;
 import com.mcphub.domain.mcp.entity.QUserMcp;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,8 +48,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		}
 
 		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
 		// 정렬 조건
@@ -76,6 +78,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
+				mcp.developerName.as("developerName"),
 				review.rating.avg().as("averageRating"),
 				userMcp.count().as("savedUserCount"),
 				mcp.isPublished,
@@ -112,6 +115,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QCategory category = QCategory.category;
 		QPlatform platform = QPlatform.platform;
 		QLicense license = QLicense.license;
+		QUserMcp userMcp = QUserMcp.userMcp;
 
 		return queryFactory
 			.select(Projections.bean(
@@ -122,14 +126,23 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.description,
 				mcp.imageUrl,
 				mcp.sourceUrl,
+                mcp.requestUrl,
 				mcp.isKeyRequired,
-
+				mcp.developerName,
+                mcp.publishedAt,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
 				platform.id.as("platformId"),
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
-				license.name.as("licenseName")
+				license.name.as("licenseName"),
+				ExpressionUtils.as(
+					JPAExpressions
+						.select(userMcp.count())
+						.from(userMcp)
+						.where(userMcp.mcp.id.eq(id)),
+					"savedUserCount"
+				)
 			))
 			.from(mcp)
 			.leftJoin(mcp.category, category)
@@ -156,8 +169,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		}
 
 		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
 		// 정렬 조건
@@ -277,9 +290,9 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QArticleMcpTool mcpTool = QArticleMcpTool.articleMcpTool;
 		List<McpToolResponse> tools = queryFactory
 			.select(Projections.bean(McpToolResponse.class,
-				mcpTool.id,
-				mcpTool.name,
-				mcpTool.content
+				mcpTool.id.as("id"),
+				mcpTool.name.as("name"),
+				mcpTool.content.as("content")
 			))
 			.from(mcpTool)
 			.where(mcpTool.mcp.id.eq(mcpId))

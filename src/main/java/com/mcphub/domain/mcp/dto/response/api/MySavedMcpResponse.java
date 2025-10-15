@@ -17,8 +17,9 @@ public class MySavedMcpResponse {
 	private String version;
 	private String description;
 	private String imageUrl;
-	private String categoryName;
+	private Long categoryId;
+	private Long licenseId;
+	private Long platformId;
 	private String platformName;
-	private String licenseName;
 	private LocalDateTime createdAt;
 }
