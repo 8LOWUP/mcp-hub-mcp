@@ -27,6 +27,7 @@ public class McpReviewAdviser {
 		return page.map(m -> mcpReviewConverter.toMcpReviewResponse(m, userId));
 	}
 
+	//TODO 추후 userID null로 파라미터 입력 시 에러 처리
 	public Long saveReview(Long mcpId, McpReviewRequest request) {
 		Long userId = securityUtils.getUserId();
 		return mcpReviewService.saveReview(userId, mcpId, request);
