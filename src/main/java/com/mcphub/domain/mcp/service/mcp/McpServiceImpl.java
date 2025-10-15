@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcp;
 
+import com.mcphub.domain.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
@@ -32,13 +33,20 @@ public class McpServiceImpl implements McpService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public McpReadModel getMcpDetail(Long id) {
+	public McpReadModel getMcpDetail(Long id, Long userId) {
 		McpReadModel rm = mcpDslRepository.getMcpDetail(id);
 		if (rm == null) {
-			throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
+			throw new RestApiException(McpErrorStatus._NOT_FOUND_INFO);
 		}
 		List<McpToolResponse> tools = mcpDslRepository.getMcpTools(id);
 		rm.setTools(tools);
+		Mcp mcp = mcpRepository.findById(id).orElse(null);
+		UserMcp userMcp = userMcpRepository.findByUserIdAndMcp(userId, mcp).orElse(null);
+		if (userMcp == null) {
+			rm.setAlreadySaved(false);
+			return rm;
+		}
+		rm.setAlreadySaved(true);
 		return rm;
 	}
 
@@ -53,14 +61,14 @@ public class McpServiceImpl implements McpService {
 	public Long saveUserMcp(Long userId, Long mcpId) {
 		boolean exists = userMcpRepository.existsByUserIdAndMcpId(userId, mcpId);
 		if (exists) {
-			throw new RestApiException(GlobalErrorStatus._ALREADY_SAVED_MCP);
+			throw new RestApiException(McpErrorStatus._ALREADY_SAVED_MCP);
 		}
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getIsPublished()) {
-			throw new RestApiException(GlobalErrorStatus._VALIDATION_ERROR);
+			throw new RestApiException(McpErrorStatus._NOT_PUBLISH);
 		}
 		UserMcp newUserMcp = UserMcp.builder()
 		                            .userId(userId)
@@ -87,10 +95,10 @@ public class McpServiceImpl implements McpService {
 	@Transactional
 	public Long deleteMcp(Long userId, Long mcpId) {
 		Mcp mcp = mcpRepository.findById(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 		int deleted = userMcpRepository.deleteByUserIdAndMcp(userId, mcp);
 		if (deleted == 0) {
-			throw new RestApiException(GlobalErrorStatus._NOT_FOUND);
+			throw new RestApiException(McpErrorStatus._ALREADY_DELETED_MCP);
 		}
 		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
 		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -117,9 +125,13 @@ public class McpServiceImpl implements McpService {
 			                   .version(mcp.getVersion())
 			                   .description(mcp.getDescription())
 			                   .imageUrl(mcp.getImageUrl())
-			                   .categoryName(mcp.getCategory().getName())
+			                   .developerName(mcp.getDeveloperName())
+			                   .sourceUrl(mcp.getSourceUrl())
+			                   .requestUrl(mcp.getRequestUrl())
+			                   .categoryId(mcp.getCategory().getId())
+			                   .licenseId(mcp.getLicense().getId())
+			                   .platformId(mcp.getPlatform().getId())
 			                   .platformName(mcp.getPlatform().getName())
-			                   .licenseName(mcp.getLicense().getName())
 			                   .createdAt(userMcp.getCreatedAt())
 			                   .build();
 		});
