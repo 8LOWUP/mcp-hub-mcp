@@ -1,4 +1,4 @@
-package com.mcphub.domain.config;
+package com.mcphub.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

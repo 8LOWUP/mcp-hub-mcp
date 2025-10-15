@@ -1,6 +1,6 @@
 package com.mcphub.domain.mcp.service.mcpDashboard;
 
-import com.mcphub.domain.error.McpErrorStatus;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
@@ -28,8 +28,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 

@@ -2,7 +2,7 @@ package com.mcphub.domain.mcp.service.mcpReview;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mcphub.domain.error.McpErrorStatus;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpReviewListRequest;
 import com.mcphub.domain.mcp.dto.request.McpReviewRequest;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReviewReadModel;
@@ -11,8 +11,6 @@ import com.mcphub.domain.mcp.entity.McpReview;
 import com.mcphub.domain.mcp.grpc.MemberGrpcClient;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpReviewRepository;
-import com.mcphub.domain.member.grpc.GetMemberInfoRequest;
-import com.mcphub.domain.member.grpc.MemberResponse;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +21,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
