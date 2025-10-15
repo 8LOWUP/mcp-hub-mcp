@@ -128,9 +128,10 @@ public class McpServiceImpl implements McpService {
 			                   .developerName(mcp.getDeveloperName())
 			                   .sourceUrl(mcp.getSourceUrl())
 			                   .requestUrl(mcp.getRequestUrl())
-			                   .categoryName(mcp.getCategory().getName())
+			                   .categoryId(mcp.getCategory().getId())
+			                   .licenseId(mcp.getLicense().getId())
+			                   .platformId(mcp.getPlatform().getId())
 			                   .platformName(mcp.getPlatform().getName())
-			                   .licenseName(mcp.getLicense().getName())
 			                   .createdAt(userMcp.getCreatedAt())
 			                   .build();
 		});

@@ -63,9 +63,10 @@ public class McpConverter {
 		                         .version(m.getVersion())
 		                         .description(m.getDescription())
 		                         .imageUrl(m.getImageUrl())
-		                         .categoryName(m.getCategoryName())
+		                         .categoryId(m.getCategoryId())
+		                         .licenseId(m.getLicenseId())
+		                         .platformId(m.getPlatformId())
 		                         .platformName(m.getPlatformName())
-		                         .licenseName(m.getLicenseName())
 		                         .build();
 	}
 }
