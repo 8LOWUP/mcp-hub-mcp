@@ -1,6 +1,6 @@
 package com.mcphub.domain.mcp.service.mcp;
 
-import com.mcphub.domain.error.McpErrorStatus;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
@@ -9,7 +9,7 @@ import com.mcphub.domain.mcp.entity.UserMcp;
 import com.mcphub.domain.mcp.repository.jsp.UserMcpRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
 import com.mcphub.global.common.exception.RestApiException;
-import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,8 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -117,24 +115,33 @@ public class McpServiceImpl implements McpService {
 
 		Page<UserMcp> userMcpPage = userMcpRepository.findByUserId(userId, pageable);
 
-		return userMcpPage.map(userMcp -> {
-			Mcp mcp = userMcp.getMcp();
-			return McpReadModel.builder()
-			                   .id(mcp.getId())
-			                   .name(mcp.getName())
-			                   .version(mcp.getVersion())
-			                   .description(mcp.getDescription())
-			                   .imageUrl(mcp.getImageUrl())
-			                   .developerName(mcp.getDeveloperName())
-			                   .sourceUrl(mcp.getSourceUrl())
-			                   .requestUrl(mcp.getRequestUrl())
-			                   .categoryId(mcp.getCategory().getId())
-			                   .licenseId(mcp.getLicense().getId())
-			                   .platformId(mcp.getPlatform().getId())
-			                   .platformName(mcp.getPlatform().getName())
-			                   .createdAt(userMcp.getCreatedAt())
-			                   .build();
-		});
+		List<McpReadModel> list = userMcpPage.getContent().stream()
+		                                     .filter(userMcp -> {
+			                                     Mcp mcp = userMcp.getMcp();
+			                                     // Mcp가 null이거나 deletedAt이 존재하면 제외
+			                                     return mcp != null && mcp.getDeletedAt() == null;
+		                                     })
+		                                     .map(userMcp -> {
+			                                     Mcp mcp = userMcp.getMcp();
+			                                     return McpReadModel.builder()
+			                                                        .id(mcp.getId())
+			                                                        .name(mcp.getName())
+			                                                        .version(mcp.getVersion())
+			                                                        .description(mcp.getDescription())
+			                                                        .imageUrl(mcp.getImageUrl())
+			                                                        .developerName(mcp.getDeveloperName())
+			                                                        .sourceUrl(mcp.getSourceUrl())
+			                                                        .requestUrl(mcp.getRequestUrl())
+			                                                        .categoryId(mcp.getCategory().getId())
+			                                                        .licenseId(mcp.getLicense().getId())
+			                                                        .platformId(mcp.getPlatform().getId())
+			                                                        .platformName(mcp.getPlatform().getName())
+			                                                        .createdAt(userMcp.getCreatedAt())
+			                                                        .build();
+		                                     })
+		                                     .toList();
+
+		return new PageImpl<>(list, pageable, list.size());
 
 	}
 
