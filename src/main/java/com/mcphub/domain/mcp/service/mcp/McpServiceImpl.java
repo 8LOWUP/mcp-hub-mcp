@@ -104,36 +104,6 @@ public class McpServiceImpl implements McpService {
 	@Override
 	@Transactional(readOnly = true)
 	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest request) {
-
-		Page<UserMcp> userMcpPage = userMcpRepository.findByUserId(userId, pageable);
-
-		List<McpReadModel> list = userMcpPage.getContent().stream()
-		                                     .filter(userMcp -> {
-			                                     Mcp mcp = userMcp.getMcp();
-			                                     // Mcp가 null이거나 deletedAt이 존재하면 제외
-			                                     return mcp != null && mcp.getDeletedAt() == null;
-		                                     })
-		                                     .map(userMcp -> {
-			                                     Mcp mcp = userMcp.getMcp();
-			                                     return McpReadModel.builder()
-			                                                        .id(mcp.getId())
-			                                                        .name(mcp.getName())
-			                                                        .version(mcp.getVersion())
-			                                                        .description(mcp.getDescription())
-			                                                        .imageUrl(mcp.getImageUrl())
-			                                                        .developerName(mcp.getDeveloperName())
-			                                                        .sourceUrl(mcp.getSourceUrl())
-			                                                        .requestUrl(mcp.getRequestUrl())
-			                                                        .categoryId(mcp.getCategory().getId())
-			                                                        .licenseId(mcp.getLicense().getId())
-			                                                        .platformId(mcp.getPlatform().getId())
-			                                                        .platformName(mcp.getPlatform().getName())
-			                                                        .createdAt(userMcp.getCreatedAt())
-			                                                        .build();
-		                                     })
-		                                     .toList();
-
-		return new PageImpl<>(list, pageable, list.size());
-
+		return mcpDslRepository.getMySavedMcpList(userId, pageable, request);
 	}
 }

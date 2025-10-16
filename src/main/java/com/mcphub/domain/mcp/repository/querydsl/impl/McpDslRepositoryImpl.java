@@ -1,6 +1,7 @@
 package com.mcphub.domain.mcp.repository.querydsl.impl;
 
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
@@ -150,6 +151,67 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.fetchOne();
 	}
 
+	// 내가 저장한 mcplist조회
+	@Override
+	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest req) {
+		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcp mcp = QMcp.mcp;
+		QCategory category = QCategory.category;
+		QPlatform platform = QPlatform.platform;
+		QLicense license = QLicense.license;
+		BooleanBuilder builder = new BooleanBuilder();
+
+		// 기본 조건
+		builder.and(userMcp.userId.eq(userId));
+		builder.and(mcp.deletedAt.isNull());
+
+		// 검색 조건
+		if (req.getSearch() != null && !req.getSearch().isBlank()) {
+			builder.and(mcp.name.containsIgnoreCase(req.getSearch())
+			                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+		}
+
+		// 메인 쿼리
+		List<McpReadModel> content = queryFactory
+			.select(Projections.bean(McpReadModel.class,
+				mcp.id,
+				mcp.name,
+				mcp.version,
+				mcp.description,
+				mcp.imageUrl,
+				mcp.developerName,
+				mcp.sourceUrl,
+				mcp.requestUrl,
+				category.id.as("categoryId"),
+				license.id.as("licenseId"),
+				platform.id.as("platformId"),
+				platform.name.as("platformName"),
+				userMcp.createdAt
+			))
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.join(mcp.category, category)
+			.join(mcp.platform, platform)
+			.join(mcp.license, license)
+			.where(builder)
+			.orderBy(userMcp.createdAt.desc()) //sort 최신 순
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.fetch();
+
+		// 총 개수 카운트
+		long total = queryFactory
+			.select(userMcp.count())
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.where(builder)
+			.fetchOne();
+
+		return new PageImpl<>(content, pageable, total);
+
+	}
+
+	// 내가 업로드한 mcp 조회
 	@Override
 	public Page<McpReadModel> searchMyUploadMcps(McpListRequest req, Pageable pageable, Long userId) {
 		QMcp mcp = QMcp.mcp;

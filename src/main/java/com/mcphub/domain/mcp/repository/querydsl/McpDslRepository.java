@@ -1,6 +1,7 @@
 package com.mcphub.domain.mcp.repository.querydsl;
 
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
@@ -16,6 +17,8 @@ public interface McpDslRepository {
 	Page<McpReadModel> searchMcps(McpListRequest req, Pageable pageable);
 
 	McpReadModel getMcpDetail(Long id);
+
+	Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest req);
 
 	// ==== MCP DASHBOARD ====
 	Page<McpReadModel> searchMyUploadMcps(McpListRequest req, Pageable pageable, Long userId);

@@ -67,6 +67,7 @@ public class McpConverter {
 		                         .licenseId(m.getLicenseId())
 		                         .platformId(m.getPlatformId())
 		                         .platformName(m.getPlatformName())
+		                         .createdAt(m.getCreatedAt())
 		                         .build();
 	}
 }
