@@ -1,13 +1,16 @@
 package com.mcphub.domain.mcp.service.mcp;
 
+import com.mcphub.domain.mcp.entity.McpMetrics;
 import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.UserMcp;
+import com.mcphub.domain.mcp.repository.jsp.McpMetricsRepository;
 import com.mcphub.domain.mcp.repository.jsp.UserMcpRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.domain.mcp.service.McpMetrics.McpMetricsService;
 import com.mcphub.global.common.exception.RestApiException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -27,6 +32,7 @@ public class McpServiceImpl implements McpService {
 	private final McpRepository mcpRepository;
 	private final UserMcpRepository userMcpRepository;
 	private final McpDslRepository mcpDslRepository;
+	private final McpMetricsService mcpMetricsService;
 	//private final ProducerService producerService;
 
 	@Override
@@ -75,15 +81,15 @@ public class McpServiceImpl implements McpService {
 		                            .build();
 
 		UserMcp saved = userMcpRepository.save(newUserMcp);
-
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			producerService.sendMcpSavedEvent(userId, mcpId);
-		// 		}
-		// 	});
-		// }
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					//여기에 카운트 추가
+					mcpMetricsService.increaseSavedCount(mcpId);
+				}
+			});
+		}
 
 		return saved.getId();
 	}
@@ -98,14 +104,16 @@ public class McpServiceImpl implements McpService {
 		if (deleted == 0) {
 			throw new RestApiException(McpErrorStatus._ALREADY_DELETED_MCP);
 		}
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			producerService.sendMcpDeletedEvent(userId, mcpId);
-		// 		}
-		// 	});
-		// }
+
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					//여기에 카운트 추가
+					mcpMetricsService.decreaseSavedCount(mcpId);
+				}
+			});
+		}
 		return mcp.getId();
 	}
 
@@ -144,5 +152,4 @@ public class McpServiceImpl implements McpService {
 		return new PageImpl<>(list, pageable, list.size());
 
 	}
-
 }

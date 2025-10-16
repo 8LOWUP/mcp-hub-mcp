@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcpDashboard;
 
+import com.mcphub.domain.mcp.entity.McpMetrics;
 import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
@@ -17,9 +18,11 @@ import com.mcphub.domain.mcp.entity.Platform;
 import com.mcphub.domain.mcp.repository.jsp.ArticleMcpToolRepository;
 import com.mcphub.domain.mcp.repository.jsp.CategoryRepository;
 import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
+import com.mcphub.domain.mcp.repository.jsp.McpMetricsRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.domain.mcp.service.McpMetrics.McpMetricsService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -42,6 +47,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class McpDashboardServiceImpl implements McpDashboardService {
 
+	private final McpMetricsRepository mcpMetricsRepository;
 	//TODO prod 올릴 때 해당 경로 존재해야함 + yml 수정
 	@Value("${spring.file.upload-dir}")
 	private String uploadDir;
@@ -52,6 +58,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
+	private final McpMetricsService mcpMetricsService;
 	//private final ProducerService producerService;
 
 	@Override
@@ -212,6 +219,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional
 	public Long publishMcp(Long userId, McpPublishDataRequest request, MultipartFile file) {
 		Mcp mcp;
+
 		if (request.getMcpId() == null) {
 			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
 		} else {
@@ -303,17 +311,10 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-		//URL NPE 발생가능성있음...
-		// if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
-		// 	if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 			@Override
-		// 			public void afterCommit() {
-		// 				producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
-		// 			}
-		// 		});
-		// 	}
-		// }
+		McpMetrics metrics = mcpMetricsRepository.findByMcpId(mcp).orElse(null);
+		if (metrics == null) {
+			mcpMetricsRepository.save(McpMetrics.builder().mcp(mcp).build());
+		}
 		return mcpRepository.save(mcp).getId();
 	}
 
@@ -334,7 +335,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 		// 		@Override
 		// 		public void afterCommit() {
-		// 			producerService.sendUrlDeletedEvent(mcpId);
+		// 			//여기에 카운트 추가
+		// 			mcpMetricsService.decreaseSavedCount(mcpId);
 		// 		}
 		// 	});
 		// }
