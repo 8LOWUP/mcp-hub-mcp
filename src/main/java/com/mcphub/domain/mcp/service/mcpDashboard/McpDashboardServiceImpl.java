@@ -311,7 +311,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-		McpMetrics metrics = mcpMetricsRepository.findByMcpId(mcp).orElse(null);
+		McpMetrics metrics = mcpMetricsRepository.findByMcp(mcp).orElse(null);
 		if (metrics == null) {
 			mcpMetricsRepository.save(McpMetrics.builder().mcp(mcp).build());
 		}

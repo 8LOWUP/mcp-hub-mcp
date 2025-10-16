@@ -12,31 +12,31 @@ import org.springframework.transaction.annotation.Transactional;
 public class McpMetricsServiceImpl implements McpMetricsService {
 	private final McpMetricsRepository mcpMetricsRepository;
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void increaseSavedCount(Long mcpId) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.addSavedCount();
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void decreaseSavedCount(Long mcpId) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.removeSavedCount();
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void increaseReviewCount(Long mcpId, Double newRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.addReview(newRating);
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void decreaseReviewCount(Long mcpId, Double deletedRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.removeReview(deletedRating);
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void updateReview(Long mcpId, Double oldRating, Double newRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.updateReview(oldRating, newRating);

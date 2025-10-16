@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface McpMetricsRepository extends JpaRepository<McpMetrics, Long> {
-	Optional<McpMetrics> findByMcpId(Mcp mcp);
+	Optional<McpMetrics> findByMcp(Mcp mcp);
 
 	Optional<McpMetrics> findByMcp_Id(Long mcpId);
 }
