@@ -29,7 +29,7 @@ public class McpDetailResponse {
 	private String licenseName;
 	private boolean alreadySaved;
 	private Double averageRating;
-	private Long savedUserCount;
+	private Integer savedUserCount;
 
 	private List<McpToolResponse> tools;
 

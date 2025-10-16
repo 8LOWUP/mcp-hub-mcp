@@ -7,6 +7,7 @@ import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
 import com.mcphub.domain.mcp.entity.QArticleMcpTool;
 import com.mcphub.domain.mcp.entity.QCategory;
 import com.mcphub.domain.mcp.entity.QLicense;
+import com.mcphub.domain.mcp.entity.QMcpMetrics;
 import com.mcphub.domain.mcp.entity.QMcpReview;
 import com.mcphub.domain.mcp.entity.QPlatform;
 import com.mcphub.domain.mcp.entity.QUserMcp;
@@ -38,7 +39,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
-
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(mcp.isPublished.eq(true).and(mcp.deletedAt.isNull()));
 		// 검색 조건
@@ -79,8 +80,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
 				mcp.developerName.as("developerName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.createdAt,
@@ -92,6 +93,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.license)
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(builder)
 			.groupBy(mcp.id)
 			.offset(pageable.getOffset())
@@ -115,7 +117,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QCategory category = QCategory.category;
 		QPlatform platform = QPlatform.platform;
 		QLicense license = QLicense.license;
-		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.bean(
@@ -126,28 +128,24 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.description,
 				mcp.imageUrl,
 				mcp.sourceUrl,
-                mcp.requestUrl,
+				mcp.requestUrl,
 				mcp.isKeyRequired,
 				mcp.developerName,
-                mcp.publishedAt,
+				mcp.publishedAt,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
 				platform.id.as("platformId"),
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				ExpressionUtils.as(
-					JPAExpressions
-						.select(userMcp.count())
-						.from(userMcp)
-						.where(userMcp.mcp.id.eq(id)),
-					"savedUserCount"
-				)
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount")
 			))
 			.from(mcp)
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(mcp.id.eq(id).and(mcp.isPublished.eq(true)).and(mcp.deletedAt.isNull()))
 			.fetchOne();
 	}
@@ -157,7 +155,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
-
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 		BooleanBuilder builder = new BooleanBuilder();
 
 		builder.and(mcp.userId.eq(userId)).and(mcp.deletedAt.isNull());
@@ -199,8 +197,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.lastPublishedAt
@@ -209,6 +207,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category)
 			.leftJoin(mcp.platform)
 			.leftJoin(mcp.license)
+			.leftJoin(metrics).on(mcp.id.eq(mcp.id))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.where(builder)
@@ -237,6 +236,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QLicense license = QLicense.license;
 		QMcpReview review = QMcpReview.mcpReview;
 		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.fields(
@@ -256,8 +256,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
 				mcp.lastPublishedAt.as("lastPublishedAt")
@@ -266,6 +266,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
+			.leftJoin(metrics).on(mcp.id.eq(mcp.id))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.where(mcp.id.eq(mcpId).and(mcp.deletedAt.isNull()))
