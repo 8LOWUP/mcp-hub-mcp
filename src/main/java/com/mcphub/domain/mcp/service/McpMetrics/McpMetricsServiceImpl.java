@@ -16,30 +16,35 @@ public class McpMetricsServiceImpl implements McpMetricsService {
 	public void increaseSavedCount(Long mcpId) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.addSavedCount();
+		mcpMetricsRepository.save(metrics);
 	}
 
 	@Transactional
 	public void decreaseSavedCount(Long mcpId) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.removeSavedCount();
+		mcpMetricsRepository.save(metrics);
 	}
 
 	@Transactional
 	public void increaseReviewCount(Long mcpId, Double newRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.addReview(newRating);
+		mcpMetricsRepository.save(metrics);
 	}
 
 	@Transactional
 	public void decreaseReviewCount(Long mcpId, Double deletedRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.removeReview(deletedRating);
+		mcpMetricsRepository.save(metrics);
 	}
 
 	@Transactional
 	public void updateReview(Long mcpId, Double oldRating, Double newRating) {
 		McpMetrics metrics = getMetrics(mcpId);
 		metrics.updateReview(oldRating, newRating);
+		mcpMetricsRepository.save(metrics);
 	}
 
 	private McpMetrics getMetrics(Long mcpId) {
