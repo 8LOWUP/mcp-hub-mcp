@@ -74,15 +74,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 		                               .build();
 		Long reviewId = mcpReviewRepository.save(mcpReview).getId();
 
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					//여기에 카운트 추가
-					mcpMetricsService.increaseReviewCount(mcpId, request.getRating());
-				}
-			});
-		}
+		mcpMetricsService.increaseReviewCount(mcpId, request.getRating());
 		return reviewId;
 	}
 
@@ -99,15 +91,9 @@ public class McpReviewServiceImpl implements McpReviewService {
 		mcpReview.setRating(request.getRating());
 		mcpReview.setContent(request.getComment());
 		Long newId = mcpReviewRepository.save(mcpReview).getId();
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					//여기에 카운트 추가
-					mcpMetricsService.updateReview(mcpReview.getMcp().getId(), oldRating, request.getRating());
-				}
-			});
-		}
+
+		mcpMetricsService.updateReview(mcpReview.getMcp().getId(), oldRating, request.getRating());
+
 		return newId;
 	}
 
@@ -121,15 +107,10 @@ public class McpReviewServiceImpl implements McpReviewService {
 			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 		mcpReviewRepository.delete(mcpReview);
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					//여기에 카운트 추가
-					mcpMetricsService.decreaseReviewCount(mcpReview.getMcp().getId(), mcpReview.getRating());
-				}
-			});
-		}
+
+		//여기에 카운트 추가
+		mcpMetricsService.decreaseReviewCount(mcpReview.getMcp().getId(), mcpReview.getRating());
+
 		return reviewId;
 	}
 

@@ -81,15 +81,7 @@ public class McpServiceImpl implements McpService {
 		                            .build();
 
 		UserMcp saved = userMcpRepository.save(newUserMcp);
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					//여기에 카운트 추가
-					mcpMetricsService.increaseSavedCount(mcpId);
-				}
-			});
-		}
+		mcpMetricsService.increaseSavedCount(mcpId);
 
 		return saved.getId();
 	}
@@ -105,15 +97,7 @@ public class McpServiceImpl implements McpService {
 			throw new RestApiException(McpErrorStatus._ALREADY_DELETED_MCP);
 		}
 
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCommit() {
-					//여기에 카운트 추가
-					mcpMetricsService.decreaseSavedCount(mcpId);
-				}
-			});
-		}
+		mcpMetricsService.decreaseSavedCount(mcpId);
 		return mcp.getId();
 	}
 
