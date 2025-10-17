@@ -349,9 +349,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
 			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
-
-		mcpRepository.delete(mcp);
-		deleteMcpElasticsearch(mcpId);
+		mcp.delete();
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
 			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 				@Override
@@ -360,7 +358,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				}
 			});
 		}
-		return mcpId;
+		return mcpRepository.save(mcp).getId();
 	}
 
 	@Override
