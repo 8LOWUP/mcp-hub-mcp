@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcp;
 
+import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
 import com.mcphub.domain.mcp.entity.McpMetrics;
 import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
@@ -62,7 +63,7 @@ public class McpServiceImpl implements McpService {
 
 	@Override
 	@Transactional
-	public Long saveUserMcp(Long userId, Long mcpId) {
+	public McpSaveResponse saveUserMcp(Long userId, Long mcpId) {
 		boolean exists = userMcpRepository.existsByUserIdAndMcpId(userId, mcpId);
 		if (exists) {
 			throw new RestApiException(McpErrorStatus._ALREADY_SAVED_MCP);
@@ -83,7 +84,16 @@ public class McpServiceImpl implements McpService {
 		UserMcp saved = userMcpRepository.save(newUserMcp);
 		mcpMetricsService.increaseSavedCount(mcpId);
 
-		return saved.getId();
+		// 이전에 플랫폼 토큰이 저장되었는 지 판별
+		boolean tokenRegistered = userMcpRepository.existsTokenRegistered(
+				userId, mcp.getPlatform().getId()
+		);
+
+		// 쓰기 요청이므로 리드모델 대신 결과 모델을 반환
+		return McpSaveResponse.builder()
+				.mcpId(saved.getMcp().getId())
+				.tokenRegisterStatus(tokenRegistered)
+				.build();
 	}
 
 	// 구매한 Mcp삭제

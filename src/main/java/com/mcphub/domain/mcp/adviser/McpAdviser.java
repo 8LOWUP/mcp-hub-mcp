@@ -4,6 +4,7 @@ import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpDetailResponse;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
+import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
 import com.mcphub.domain.mcp.dto.response.api.MySavedMcpResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.global.util.SecurityUtils;
@@ -31,7 +32,8 @@ public class McpAdviser {
 		return mcpConverter.toMcpDetailResponse(mcpService.getMcpDetail(id, userId));
 	}
 
-	public Long saveUserMcp(Long mcpId) {
+	// MCP 저장(구매)
+	public McpSaveResponse saveUserMcp(Long mcpId) {
 		Long userId = securityUtils.getUserId();
 		return mcpService.saveUserMcp(userId, mcpId);
 	}

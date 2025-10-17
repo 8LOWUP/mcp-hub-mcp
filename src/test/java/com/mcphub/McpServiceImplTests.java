@@ -2,6 +2,7 @@ package com.mcphub;
 
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
+import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.Mcp;
@@ -134,7 +135,7 @@ public class McpServiceImplTests {
 		given(userMcpRepository.save(any(UserMcp.class))).willReturn(mockUserMcp);
 
 		// when
-		Long resultId = mcpService.saveUserMcp(userId, mcpId);
+		McpSaveResponse resultId = mcpService.saveUserMcp(userId, mcpId);
 
 		// then
 		assertThat(resultId).isEqualTo(10L);

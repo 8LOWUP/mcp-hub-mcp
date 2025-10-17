@@ -2,6 +2,7 @@ package com.mcphub.domain.mcp.controller;
 
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpDetailResponse;
+import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
 import com.mcphub.domain.mcp.dto.response.api.MySavedMcpResponse;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -85,7 +86,7 @@ public class McpController {
 	 * @param mcpId
 	 * @return MCP 상세 내용
 	 */
-	@Operation(summary = "MCP 저장(구매)", description = "마켓에서 MCP를 저장(구매)합니다.")
+	@Operation(summary = "MCP 저장(구매)", description = "마켓에서 MCP를 저장(구매)합니다. 응답으로 해당 MCP가 사용하는 플랫폼의 토큰이 이전에 저장되었는지, 아닌지를 반환합니다. 이전에 저장하지 않았다면 유저는 플랫폼 토큰을 등록해야 해당 MCP를 사용 가능합니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "저장 성공"),
 		@ApiResponse(responseCode = "402", description = "발행되지 않은 MCP"),
@@ -93,10 +94,9 @@ public class McpController {
 		@ApiResponse(responseCode = "409", description = "이미 저장된 MCP")
 	})
 	@PostMapping("/{mcpId}")
-	public BaseResponse<Long> saveUserMcp(@Parameter(description = "MCP ID", required = true)
+	public BaseResponse<McpSaveResponse> saveUserMcp(@Parameter(description = "MCP ID", required = true)
 	                                      @PathVariable Long mcpId) {
-		Long saveId = mcpAdviser.saveUserMcp(mcpId);
-		return BaseResponse.onSuccess(saveId);
+		return BaseResponse.onSuccess(mcpAdviser.saveUserMcp(mcpId));
 	}
 
 	//TODO : 소프트 삭제? 하드 삭제? 여부 정해야함

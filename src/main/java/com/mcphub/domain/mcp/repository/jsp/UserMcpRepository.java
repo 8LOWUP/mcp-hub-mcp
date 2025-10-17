@@ -25,4 +25,14 @@ public interface UserMcpRepository extends JpaRepository<UserMcp, Long> {
 	Page<UserMcp> findByUserId(Long userId, Pageable pageable);
 
 	Optional<UserMcp> findByUserIdAndMcp(Long userId, Mcp mcp);
+
+	@Query("""
+        SELECT CASE WHEN COUNT(um) > 0 THEN TRUE ELSE FALSE END
+        FROM UserMcp um
+        WHERE um.userId = :userId
+          AND um.platformId = :platformId
+          AND um.platformToken IS NOT NULL
+    """)
+	boolean existsTokenRegistered(@Param("userId") Long userId, @Param("platformId") Long platformId);
+
 }
