@@ -313,7 +313,13 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 		McpMetrics metrics = mcpMetricsRepository.findByMcp(mcp).orElse(null);
 		if (metrics == null) {
-			mcpMetricsRepository.save(McpMetrics.builder().mcp(mcp).build());
+			mcpMetricsRepository.save(McpMetrics.builder()
+			                                    .mcp(mcp)
+			                                    .savedUserCount(0)
+			                                    .reviewCount(0)
+			                                    .avgRating(0.0)
+			                                    .reviewScoreSum(0.0)
+			                                    .build());
 		}
 		return mcpRepository.save(mcp).getId();
 	}
