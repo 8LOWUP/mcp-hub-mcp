@@ -33,8 +33,8 @@ public class MyUploadMcpDetailResponse {
 	private Long licenseId;
 	private String licenseName;
 
-	private double averageRating;     // null 가능
-	private Integer savedUserCount;
+	// private double averageRating;     // null 가능
+	// private Integer savedUserCount;
 
 	// 상태값
 	private boolean isPublished;

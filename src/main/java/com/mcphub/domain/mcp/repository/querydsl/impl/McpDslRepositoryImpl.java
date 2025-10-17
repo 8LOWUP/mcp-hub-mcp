@@ -367,8 +367,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				metrics.avgRating.as("averageRating"),
-				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
 				mcp.lastPublishedAt.as("lastPublishedAt")
@@ -377,7 +375,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
-			.leftJoin(metrics).on(mcp.id.eq(mcp.id))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.where(mcp.id.eq(mcpId).and(mcp.deletedAt.isNull()))
