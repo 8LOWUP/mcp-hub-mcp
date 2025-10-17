@@ -46,4 +46,8 @@ public interface UserMcpRepository extends JpaRepository<UserMcp, Long> {
 	// userId + platformId 기준으로 모든 MCP 레코드 조회
 	List<UserMcp> findAllByUserIdAndPlatformId(Long userId, Long platformId);
 
+	// userId + mcpIds 기준으로 모든 MCP 레코드 조회
+	@Query("SELECT u FROM UserMcp u WHERE u.userId = :userId AND u.mcp.id IN :mcpIds")
+	List<UserMcp> findAllByUserIdAndMcpIds(@Param("userId") Long userId, @Param("mcpIds") List<Long> mcpIds);
+
 }

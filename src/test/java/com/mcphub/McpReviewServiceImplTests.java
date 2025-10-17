@@ -49,7 +49,7 @@ class McpReviewServiceImplTest {
 
 		Mcp mcp = Mcp.builder().id(mcpId).build();
 		McpReviewRequest request = new McpReviewRequest();
-		request.setRating(3);
+		request.setRating(3.0);
 
 		McpReview review = McpReview.builder()
 		                            .id(200L)

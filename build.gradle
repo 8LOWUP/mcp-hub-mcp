@@ -147,8 +147,11 @@ dependencies {
     implementation 'io.grpc:grpc-protobuf:1.64.0'
     implementation 'io.grpc:grpc-stub:1.64.0'
     compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
-    //server grpc
+
+    //grpc 클라이언트
     implementation "net.devh:grpc-client-spring-boot-starter:2.15.0.RELEASE"
+    // grpc server
+    implementation 'net.devh:grpc-server-spring-boot-starter:2.15.0.RELEASE'
 
     // 모니터링
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

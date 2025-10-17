@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.mcphub.domain.mcp.grpc";
+option java_outer_classname = "McpProto";
+
+package mcp;
+
+// MCP 관련 gRPC 서비스
+service McpService {
+  // 유저 ID와 MCP ID 리스트를 받아 MCP URL-Token 정보를 반환
+  rpc GetMcpUrlTokenPairs (McpUrlTokenRequest) returns (McpUrlTokenResponse);
+}
+
+// 요청 메시지
+message McpUrlTokenRequest {
+  string userId = 1;          // 요청하는 유저 ID
+  repeated int64 mcpIds = 2;  // 요청할 MCP ID 리스트
+}
+
+// 응답 메시지
+message McpUrlTokenResponse {
+  repeated McpUrlTokenPair pairs = 1; // MCP URL과 토큰 세트 리스트
+}
+
+// MCP URL-Token 한 쌍
+message McpUrlTokenPair {
+  string url = 1;     // MCP 호출용 URL
+  string token = 2;   // MCP별 인증 토큰
+}
