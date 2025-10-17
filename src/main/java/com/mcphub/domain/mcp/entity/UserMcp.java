@@ -38,4 +38,7 @@ public class UserMcp extends BaseEntity {
 
 	@Column(name = "platform_id", nullable = true, columnDefinition = "TEXT")
 	private Long platformId;
+
+	@Column(name = "platform_token", nullable = true)
+	private String platformToken;
 }
