@@ -269,7 +269,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category)
 			.leftJoin(mcp.platform)
 			.leftJoin(mcp.license)
-			.leftJoin(metrics).on(mcp.id.eq(mcp.id))
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.where(builder)
