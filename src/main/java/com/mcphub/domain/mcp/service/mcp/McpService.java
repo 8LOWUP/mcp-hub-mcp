@@ -32,8 +32,6 @@ public interface McpService {
 
 	Long registerPlatformToken(Long userId, Long platformId, String token);
 
-	Long updatePlatformToken(Long userId, Long platformId, String token);
-
 	void deletePlatformToken(Long userId, Long platformId);
 
 	List<PlatformTokenReadModel> getMyPlatformTokens(Long userId);

@@ -151,16 +151,6 @@ public class McpController {
 		return BaseResponse.onSuccess(mcpAdviser.getMyPlatformTokens());
 	}
 
-	// 플랫폼 토큰 업데이트
-	@Operation(summary = "플랫폼 토큰 갱신", description = "특정 플랫폼의 토큰을 새 값으로 교체합니다.")
-	@PutMapping("/platform-token/{platformId}")
-	public BaseResponse<Long> updatePlatformToken(
-			@PathVariable Long platformId,
-			@RequestParam String platformToken
-	) {
-		return BaseResponse.onSuccess(mcpAdviser.updatePlatformToken(platformId, platformToken));
-	}
-
 	// 플랫폼 토큰 삭제
 	@Operation(summary = "플랫폼 토큰 삭제", description = "특정 플랫폼에 등록된 토큰을 삭제합니다.")
 	@DeleteMapping("/platform-token/{platformId}")

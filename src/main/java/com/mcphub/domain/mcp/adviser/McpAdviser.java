@@ -56,11 +56,6 @@ public class McpAdviser {
 		return mcpService.registerPlatformToken(userId, platformId, token);
 	}
 
-	public Long updatePlatformToken(Long platformId, String token) {
-		Long userId = securityUtils.getUserId();
-		return mcpService.updatePlatformToken(userId, platformId, token);
-	}
-
 	public void deletePlatformToken(Long platformId) {
 		Long userId = securityUtils.getUserId();
 		mcpService.deletePlatformToken(userId, platformId);

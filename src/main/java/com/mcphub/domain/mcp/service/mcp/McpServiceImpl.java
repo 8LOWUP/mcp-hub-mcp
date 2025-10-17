@@ -123,31 +123,32 @@ public class McpServiceImpl implements McpService {
 	 * 플랫폼 토큰 등록
 	 */
 	@Override
+	@Transactional
 	public Long registerPlatformToken(Long userId, Long platformId, String token) {
-		UserMcp userMcp = userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
-				.orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
-		userMcp.setPlatformToken(token);
-		return userMcp.getId();
-	}
+		List<UserMcp> userMcps = userMcpRepository.findAllByUserIdAndPlatformId(userId, platformId);
 
-	/**
-	 * 플랫폼 토큰 수정
-	 */
-	@Override
-	public Long updatePlatformToken(Long userId, Long platformId, String token) {
-		UserMcp userMcp = userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
-				.orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
-		userMcp.setPlatformToken(token);
-		return userMcp.getId();
+		if (userMcps.isEmpty()) {
+			throw new RestApiException(McpErrorStatus._NOT_FOUND);
+		}
+		// 동일 플랫폼의 모든 MCP에 같은 토큰을 설정
+		userMcps.forEach(um -> um.setPlatformToken(token));
+
+		return platformId;
 	}
 
 	/**
 	 * 플랫폼 토큰 삭제
 	 */
 	@Override
+	@Transactional
 	public void deletePlatformToken(Long userId, Long platformId) {
-		userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
-				.ifPresent(u -> u.setPlatformToken(null));
+		List<UserMcp> userMcps = userMcpRepository.findAllByUserIdAndPlatformId(userId, platformId);
+
+		if (userMcps.isEmpty()) {
+			throw new RestApiException(McpErrorStatus._NOT_FOUND);
+		}
+		// 동일 플랫폼의 모든 MCP에 같은 토큰을 설정
+		userMcps.forEach(um -> um.setPlatformToken(null));
 	}
 
 	/**
