@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -34,5 +35,12 @@ public interface UserMcpRepository extends JpaRepository<UserMcp, Long> {
           AND um.platformToken IS NOT NULL
     """)
 	boolean existsTokenRegistered(@Param("userId") Long userId, @Param("platformId") Long platformId);
+
+	Optional<UserMcp> findFirstByUserIdAndPlatformId(Long userId, Long platformId);
+
+	boolean existsByUserIdAndPlatformIdAndPlatformTokenIsNotNull(Long userId, Long platformId);
+
+	@Query("SELECT DISTINCT um.platformId FROM UserMcp um WHERE um.userId = :userId")
+	List<Long> findDistinctPlatformIdsByUserId(@Param("userId") Long userId);
 
 }

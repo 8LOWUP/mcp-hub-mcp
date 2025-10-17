@@ -1,6 +1,8 @@
 package com.mcphub.domain.mcp.service.mcp;
 
 import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
+import com.mcphub.domain.mcp.dto.response.api.PlatformTokenStatusListResponse;
+import com.mcphub.domain.mcp.dto.response.readmodel.PlatformTokenReadModel;
 import com.mcphub.domain.mcp.entity.McpMetrics;
 import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
@@ -115,5 +117,53 @@ public class McpServiceImpl implements McpService {
 	@Transactional(readOnly = true)
 	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest request) {
 		return mcpDslRepository.getMySavedMcpList(userId, pageable, request);
+	}
+
+	/**
+	 * 플랫폼 토큰 등록
+	 */
+	@Override
+	public Long registerPlatformToken(Long userId, Long platformId, String token) {
+		UserMcp userMcp = userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
+				.orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
+		userMcp.setPlatformToken(token);
+		return userMcp.getId();
+	}
+
+	/**
+	 * 플랫폼 토큰 수정
+	 */
+	@Override
+	public Long updatePlatformToken(Long userId, Long platformId, String token) {
+		UserMcp userMcp = userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
+				.orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
+		userMcp.setPlatformToken(token);
+		return userMcp.getId();
+	}
+
+	/**
+	 * 플랫폼 토큰 삭제
+	 */
+	@Override
+	public void deletePlatformToken(Long userId, Long platformId) {
+		userMcpRepository.findFirstByUserIdAndPlatformId(userId, platformId)
+				.ifPresent(u -> u.setPlatformToken(null));
+	}
+
+	/**
+	 * 내 플랫폼 토큰 상태 조회
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<PlatformTokenReadModel> getMyPlatformTokens(Long userId) {
+		List<Long> platformIds = userMcpRepository.findDistinctPlatformIdsByUserId(userId);
+
+		return platformIds.stream()
+				.map(pid -> {
+					boolean tokenRegistered = userMcpRepository
+							.existsByUserIdAndPlatformIdAndPlatformTokenIsNotNull(userId, pid);
+					return new PlatformTokenReadModel(pid, tokenRegistered);
+				})
+				.toList();
 	}
 }

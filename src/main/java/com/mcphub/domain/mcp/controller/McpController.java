@@ -1,9 +1,7 @@
 package com.mcphub.domain.mcp.controller;
 
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
-import com.mcphub.domain.mcp.dto.response.api.McpDetailResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
-import com.mcphub.domain.mcp.dto.response.api.MySavedMcpResponse;
+import com.mcphub.domain.mcp.dto.response.api.*;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -15,17 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.mcphub.domain.mcp.adviser.McpAdviser;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.global.common.base.BaseResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpResponse;
 
 /**
  * MCP 컨트롤러
@@ -137,5 +128,44 @@ public class McpController {
 		);
 
 		return BaseResponse.onSuccess(mcpAdviser.getMySavedMcpList(pageable, request));
+	}
+
+	// todo 플랫폼 토큰 엔티티 분리해서 따로 플랫폼 토큰을 관리하는 컨트롤러 서비스 분리 필요, 빠른 구현이 필요해서 일단 MCP 컨트롤러에 포함시킴
+
+	// 플랫폼 토큰 등록
+	@Operation(summary = "플랫폼 토큰 등록", description = "특정 플랫폼에 대한 인증 토큰을 등록합니다.")
+	@PostMapping("/platform-token/{platformId}")
+	public BaseResponse<Long> registerPlatformToken(
+			@Parameter(description = "MCP ID", required = true)
+			@PathVariable Long platformId,
+			@Parameter(description = "등록할 플랫폼 토큰", required = true)
+			@RequestParam String platformToken
+	) {
+		return BaseResponse.onSuccess(mcpAdviser.registerPlatformToken(platformId, platformToken));
+	}
+
+	// 내 플랫폼 토큰 조회(내가 등록한 플랫폼 토큰 리스트를 조회합니다.)
+	@Operation(summary = "플랫폼 토큰 상태 조회", description = "사용자가 가진 플랫폼별 토큰 등록 여부를 조회합니다.")
+	@GetMapping("/platform-token/me")
+	public BaseResponse<PlatformTokenStatusListResponse> getMyPlatformTokens() {
+		return BaseResponse.onSuccess(mcpAdviser.getMyPlatformTokens());
+	}
+
+	// 플랫폼 토큰 업데이트
+	@Operation(summary = "플랫폼 토큰 갱신", description = "특정 플랫폼의 토큰을 새 값으로 교체합니다.")
+	@PutMapping("/platform-token/{platformId}")
+	public BaseResponse<Long> updatePlatformToken(
+			@PathVariable Long platformId,
+			@RequestParam String platformToken
+	) {
+		return BaseResponse.onSuccess(mcpAdviser.updatePlatformToken(platformId, platformToken));
+	}
+
+	// 플랫폼 토큰 삭제
+	@Operation(summary = "플랫폼 토큰 삭제", description = "특정 플랫폼에 등록된 토큰을 삭제합니다.")
+	@DeleteMapping("/platform-token/{platformId}")
+	public BaseResponse<Void> deletePlatformToken(@PathVariable Long platformId) {
+		mcpAdviser.deletePlatformToken(platformId);
+		return BaseResponse.onSuccess(null);
 	}
 }

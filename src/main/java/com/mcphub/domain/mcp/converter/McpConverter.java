@@ -1,11 +1,11 @@
 package com.mcphub.domain.mcp.converter;
 
-import com.mcphub.domain.mcp.dto.response.api.McpDetailResponse;
-import com.mcphub.domain.mcp.dto.response.api.McpResponse;
-import com.mcphub.domain.mcp.dto.response.api.MySavedMcpResponse;
+import com.mcphub.domain.mcp.dto.response.api.*;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
+import com.mcphub.domain.mcp.dto.response.readmodel.PlatformTokenReadModel;
 import org.springframework.stereotype.Component;
-import com.mcphub.domain.mcp.dto.response.api.TestResponse;
+
+import java.util.List;
 
 @Component
 public class McpConverter {
@@ -69,5 +69,19 @@ public class McpConverter {
 		                         .platformName(m.getPlatformName())
 		                         .createdAt(m.getCreatedAt())
 		                         .build();
+	}
+
+	public PlatformTokenStatusListResponse toPlatformTokenStatusResponseList(
+			List<PlatformTokenReadModel> readModels
+	) {
+		List<PlatformTokenStatusListResponse.PlatformTokenStatusResponse> statusList =
+				readModels.stream()
+						.map(r -> new PlatformTokenStatusListResponse.PlatformTokenStatusResponse(
+								r.getPlatformId(),
+								r.isTokenRegistered()
+						))
+						.toList();
+
+		return new PlatformTokenStatusListResponse(statusList);
 	}
 }

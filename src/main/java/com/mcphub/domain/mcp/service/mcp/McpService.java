@@ -4,11 +4,17 @@ import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpResponse;
 import com.mcphub.domain.mcp.dto.response.api.McpSaveResponse;
+import com.mcphub.domain.mcp.dto.response.api.PlatformTokenStatusListResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
+import com.mcphub.domain.mcp.dto.response.readmodel.PlatformTokenReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.TestReadDto;
 import com.mcphub.domain.mcp.entity.Mcp;
+import com.mcphub.domain.mcp.entity.UserMcp;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
+import com.mcphub.global.common.exception.RestApiException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,4 +29,12 @@ public interface McpService {
 	Long deleteMcp(Long userId, Long mcpId);
 
 	Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest request);
+
+	Long registerPlatformToken(Long userId, Long platformId, String token);
+
+	Long updatePlatformToken(Long userId, Long platformId, String token);
+
+	void deletePlatformToken(Long userId, Long platformId);
+
+	List<PlatformTokenReadModel> getMyPlatformTokens(Long userId);
 }
