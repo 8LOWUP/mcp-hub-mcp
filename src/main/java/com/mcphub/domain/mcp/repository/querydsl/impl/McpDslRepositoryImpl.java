@@ -5,6 +5,7 @@ import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
 import com.mcphub.domain.mcp.entity.QArticleMcpTool;
 import com.mcphub.domain.mcp.entity.QCategory;
 import com.mcphub.domain.mcp.entity.QLicense;
@@ -21,19 +22,27 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Repository;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.querydsl.core.BooleanBuilder;
 import com.mcphub.domain.mcp.entity.QMcp;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
 public class McpDslRepositoryImpl implements McpDslRepository {
 
 	private final JPAQueryFactory queryFactory;
+	private final ElasticsearchOperations elasticsearchOperations;
 
 	@Override
 	public Page<McpReadModel> searchMcps(McpListRequest req, Pageable pageable) {
@@ -41,20 +50,64 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
 		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
+
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(mcp.isPublished.eq(true).and(mcp.deletedAt.isNull()));
-		// 검색 조건
+
+		List<Long> matchedIds = null;
+		System.out.println("---------1 >>>>>>>>>>>>>>>>> 검색어: " + req.getSearch());
+
 		if (req.getSearch() != null && !req.getSearch().isBlank()) {
-			builder.and(mcp.name.containsIgnoreCase(req.getSearch())
-			                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+			System.out.println("---------2 Elasticsearch 검색 시작 ---------");
+
+			NativeQuery query = new NativeQueryBuilder()
+				.withQuery(QueryBuilders.multiMatch(m -> m
+					.query(req.getSearch())
+					.fields(List.of(
+						"title^3.0",     // 제목 가중치 높게
+						"content^1.5"    // 내용 가중치 낮게
+					))
+					.fuzziness("AUTO")
+					.operator(co.elastic.clients.elasticsearch._types.query_dsl.Operator.Or) // 여러 단어 중 하나라도 포함되면 검색
+					.type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields) // 가장 유사한 필드 기준
+				))
+				.withPageable(PageRequest.of(0, 1000))
+				.build();
+
+			System.out.println("[Elasticsearch Query] >>> " + query.getQuery());
+
+			var searchHits = elasticsearchOperations.search(query, McpElasticsearch.class);
+
+			System.out.println("[Elasticsearch Result Count] >>> " + searchHits.getSearchHits().size());
+			searchHits.forEach(hit -> {
+				System.out.println("----");
+				System.out.println("Index: " + hit.getIndex());
+				System.out.println("Score: " + hit.getScore());
+				System.out.println("Source: " + hit.getContent());
+			});
+
+			matchedIds = searchHits
+				.stream()
+				.map(hit -> hit.getContent().getMcpId())
+				.distinct()
+				.toList();
+
+			if (matchedIds.isEmpty()) {
+				System.out.println("---------3 빈페이지 반환 (검색 결과 없음)");
+				if (req.getSearch() != null && !req.getSearch().isBlank()) {
+					System.out.println("------------4 ; DB 검색어 쿼리 수행");
+					builder.and(mcp.name.containsIgnoreCase(req.getSearch())
+					                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+				}
+			} else {
+				builder.and(mcp.id.in(matchedIds));
+			}
 		}
 
-		// 카테고리 조건
 		if (req.getCategory() != null) {
 			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
-		// 정렬 조건
 		OrderSpecifier<?> orderSpecifier;
 		if ("popular".equalsIgnoreCase(req.getSort())) {
 			orderSpecifier = userMcp.count().desc();
@@ -64,7 +117,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			orderSpecifier = mcp.createdAt.desc(); // 기본 최신순
 		}
 
-		// 실제 조회
+		//실제 조회
 		List<McpReadModel> content = queryFactory
 			.select(Projections.bean(McpReadModel.class,
 				mcp.id,
@@ -102,12 +155,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.orderBy(orderSpecifier)
 			.fetch();
 
-		// 전체 카운트
-		long total = queryFactory
-			.select(mcp.count())
-			.from(mcp)
-			.where(builder)
-			.fetchOne();
+		long total = matchedIds != null ? matchedIds.size() :
+			queryFactory.select(mcp.count()).from(mcp).where(builder).fetchOne();
 
 		return new PageImpl<>(content, pageable, total);
 	}
