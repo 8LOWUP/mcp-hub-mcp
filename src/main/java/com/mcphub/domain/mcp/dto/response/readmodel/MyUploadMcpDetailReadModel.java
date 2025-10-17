@@ -33,7 +33,7 @@ public class MyUploadMcpDetailReadModel {
 	private String licenseName;
 
 	private double averageRating;     // null 가능
-	private Long savedUserCount;
+	private Integer savedUserCount;
 	private boolean isPublished;
 	private LocalDateTime publishedAt;
 	private LocalDateTime lastPublishedAt;
