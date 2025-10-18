@@ -26,7 +26,7 @@ public class KafkaEventHandler {
         log.info("called kafka handlechange");
         try {
             JsonNode root = objectMapper.readTree(message);
-            JsonNode after = root.path("payload").path("after");
+            JsonNode after = root.path("payload");
             if (after.isMissingNode()) {
                 return; // 삭제된 경우 무시
             }
