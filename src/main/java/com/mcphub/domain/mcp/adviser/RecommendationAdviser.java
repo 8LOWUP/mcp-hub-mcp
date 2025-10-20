@@ -17,17 +17,22 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class RecommendationAdviser {
-    private final GptService gptService;
-    private final McpRecommendationService mcpRecommendationService;
-    private final RecommendationConverter recommendationConverter;
+	private final GptService gptService;
+	private final McpRecommendationService mcpRecommendationService;
+	private final RecommendationConverter recommendationConverter;
 
-    private final int recommendationNum = 5;
+	private final int recommendationNum = 5;
 
-    public RecommendationResponse recommendationChat(RecommendationRequest request) {
-        RecommendationChatMessage recommendationChatMessage = gptService.toRequestAndResponseMessage(request.chatMessage());
-
-        float[] embedding = gptService.embedText(recommendationChatMessage.requestText());
-        List<McpVector> mcpVectorList = mcpRecommendationService.searchByVector(embedding, recommendationNum);
-        return recommendationConverter.toRecommendationResponse(recommendationChatMessage.responseText(), mcpVectorList);
-    }
+	public RecommendationResponse recommendationChat(RecommendationRequest request) {
+		log.info("1111111111111111");
+		RecommendationChatMessage recommendationChatMessage = gptService.toRequestAndResponseMessage(
+			request.chatMessage());
+		log.info("2222222222222");
+		float[] embedding = gptService.embedText(recommendationChatMessage.requestText());
+		log.info("33333333333333");
+		List<McpVector> mcpVectorList = mcpRecommendationService.searchByVector(embedding, recommendationNum);
+		log.info("444444444444444");
+		return recommendationConverter.toRecommendationResponse(recommendationChatMessage.responseText(),
+			mcpVectorList);
+	}
 }

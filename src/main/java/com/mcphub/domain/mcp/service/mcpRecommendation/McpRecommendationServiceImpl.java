@@ -25,6 +25,7 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 	private final McpIndexElasticsearchRepository repository;
 
 	public List<McpVector> searchByVector(float[] queryVector, int k) {
+		log.info(">>>>>>>>>>>>> start searchByVector");
 		try {
 			// 1. SearchRequest 생성
 			SearchRequest searchRequest = SearchRequest.of(s -> s
