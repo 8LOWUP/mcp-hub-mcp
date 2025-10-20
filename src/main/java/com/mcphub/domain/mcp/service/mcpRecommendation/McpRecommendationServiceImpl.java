@@ -5,7 +5,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.mcphub.domain.mcp.entity.McpVector;
-import com.mcphub.domain.mcp.repository.elasticsearch.McpElasticsearchRepository;
+import com.mcphub.domain.mcp.repository.elasticsearch.McpIndexElasticsearchRepository;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -22,69 +21,71 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class McpRecommendationServiceImpl implements McpRecommendationService {
-    private final ElasticsearchClient elasticsearchClient;
-    private final McpElasticsearchRepository repository;
+	private final ElasticsearchClient elasticsearchClient;
+	private final McpIndexElasticsearchRepository repository;
 
-    public List<McpVector> searchByVector(float[] queryVector, int k) {
-        try {
-            // 1. SearchRequest 생성
-            SearchRequest searchRequest = SearchRequest.of(s -> s
-                    .index("mcp_index")
-                    .size(k)
-                    .knn(knn -> knn
-                            .field("embedding")
-                            .queryVector(toFloatList(queryVector))
-                            .k((long) k)
-                            .numCandidates(100L)
-                    )
-            );
+	public List<McpVector> searchByVector(float[] queryVector, int k) {
+		log.info(">>>>>>>>>>>>> start searchByVector");
+		try {
+			// 1. SearchRequest 생성
+			log.info("11111111111111111111");
+			SearchRequest searchRequest = SearchRequest.of(s -> s
+				.index("mcp_index")
+				.size(k)
+				.knn(knn -> knn
+					.field("embedding")
+					.queryVector(toFloatList(queryVector))
+					.k((long)k)
+					.numCandidates(100L)
+				)
+			);
+			log.info("2222222222222222222");
+			// 2. Map으로 검색 결과 받기
+			SearchResponse<Map> response = elasticsearchClient.search(searchRequest, Map.class);
+			log.info("33333333333333333333");
+			List<McpVector> results = new ArrayList<>();
+			log.info("4444444444444444444");
+			// 3. Map -> McpVector 변환
+			for (Hit<Map> hit : response.hits().hits()) {
+				Map source = hit.source();
+				if (source != null) {
+					// embedding 변환
+					List<Number> embeddingList = (List<Number>)source.get("embedding");
+					float[] embedding = new float[embeddingList.size()];
+					for (int i = 0; i < embeddingList.size(); i++) {
+						embedding[i] = embeddingList.get(i).floatValue();
+					}
 
-            // 2. Map으로 검색 결과 받기
-            SearchResponse<Map> response = elasticsearchClient.search(searchRequest, Map.class);
+					// McpVector 객체 생성
+					McpVector mcp = new McpVector(
+						((Number)source.get("mcpId")).longValue(),
+						(String)source.get("name"),
+						(String)source.get("description"),
+						embedding
+					);
 
-            List<McpVector> results = new ArrayList<>();
+					results.add(mcp);
+				}
+			}
+			log.info("55555555555555555555");
+			return results;
 
-            // 3. Map -> McpVector 변환
-            for (Hit<Map> hit : response.hits().hits()) {
-                Map source = hit.source();
-                if (source != null) {
-                    // embedding 변환
-                    List<Number> embeddingList = (List<Number>) source.get("embedding");
-                    float[] embedding = new float[embeddingList.size()];
-                    for (int i = 0; i < embeddingList.size(); i++) {
-                        embedding[i] = embeddingList.get(i).floatValue();
-                    }
+		} catch (Exception e) {
+			throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
+		}
+	}
 
-                    // McpVector 객체 생성
-                    McpVector mcp = new McpVector(
-                            ((Number) source.get("mcpId")).longValue(),
-                            (String) source.get("name"),
-                            (String) source.get("description"),
-                            embedding
-                    );
+	@Transactional
+	public McpVector processAndSaveDocument(Long mcpId, String title, String description, float[] embedding) {
+		McpVector mcpVector = new McpVector(mcpId, title, description, embedding);
+		return repository.save(mcpVector);
+	}
 
-                    results.add(mcp);
-                }
-            }
-
-            return results;
-
-        } catch (Exception e) {
-            throw new RestApiException(GlobalErrorStatus._INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @Transactional
-    public McpVector processAndSaveDocument(Long mcpId, String title, String description, float[] embedding) {
-        McpVector mcpVector = new McpVector(mcpId, title, description, embedding);
-        return repository.save(mcpVector);
-    }
-
-    private List<Float> toFloatList(float[] vector) {
-        List<Float> list = new ArrayList<>(vector.length);
-        for (float v : vector) {
-            list.add(v);
-        }
-        return list;
-    }
+	private List<Float> toFloatList(float[] vector) {
+		List<Float> list = new ArrayList<>(vector.length);
+		for (float v : vector) {
+			list.add(v);
+		}
+		return list;
+	}
 }

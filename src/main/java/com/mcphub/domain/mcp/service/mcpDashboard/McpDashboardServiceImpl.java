@@ -1,5 +1,6 @@
 package com.mcphub.domain.mcp.service.mcpDashboard;
 
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
 import com.mcphub.domain.mcp.entity.McpMetrics;
 import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
@@ -15,6 +16,7 @@ import com.mcphub.domain.mcp.entity.Category;
 import com.mcphub.domain.mcp.entity.License;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.mcphub.domain.mcp.entity.Platform;
+import com.mcphub.domain.mcp.repository.elasticsearch.McpElasticsearchRepository;
 import com.mcphub.domain.mcp.repository.jsp.ArticleMcpToolRepository;
 import com.mcphub.domain.mcp.repository.jsp.CategoryRepository;
 import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
@@ -47,7 +49,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class McpDashboardServiceImpl implements McpDashboardService {
 
-	private final McpMetricsRepository mcpMetricsRepository;
 	//TODO prod 올릴 때 해당 경로 존재해야함 + yml 수정
 	@Value("${spring.file.upload-dir}")
 	private String uploadDir;
@@ -58,7 +59,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
-	private final McpMetricsService mcpMetricsService;
+	private final McpMetricsRepository mcpMetricsRepository;
+	private final McpElasticsearchRepository mcpElasticsearchRepository;
 	//private final ProducerService producerService;
 
 	@Override
@@ -321,7 +323,19 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			                                    .reviewScoreSum(0.0)
 			                                    .build());
 		}
-		return mcpRepository.save(mcp).getId();
+
+		Long savedMcpId = mcpRepository.save(mcp).getId();
+
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					upsertMcpElasticsearch(mcp);
+				}
+			});
+		}
+
+		return savedMcpId;
 	}
 
 	@Override
@@ -335,17 +349,15 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
 			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
-
 		mcp.delete();
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			//여기에 카운트 추가
-		// 			mcpMetricsService.decreaseSavedCount(mcpId);
-		// 		}
-		// 	});
-		// }
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					deleteMcpElasticsearch(mcpId);
+				}
+			});
+		}
 		return mcpRepository.save(mcp).getId();
 	}
 
@@ -353,5 +365,18 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional(readOnly = true)
 	public List<String> getPlatform() {
 		return platformRepository.findAll().stream().map(Platform::getName).collect(Collectors.toList());
+	}
+
+	private void upsertMcpElasticsearch(Mcp mcp) {
+		McpElasticsearch doc = McpElasticsearch.builder()
+		                                       .mcpId(mcp.getId())
+		                                       .title(mcp.getName())
+		                                       .content(mcp.getDescription())
+		                                       .build();
+		mcpElasticsearchRepository.save(doc);
+	}
+
+	private void deleteMcpElasticsearch(Long mcpId) {
+		mcpElasticsearchRepository.deleteById(mcpId);
 	}
 }

@@ -5,6 +5,7 @@ import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
 import com.mcphub.domain.mcp.entity.QArticleMcpTool;
 import com.mcphub.domain.mcp.entity.QCategory;
 import com.mcphub.domain.mcp.entity.QLicense;
@@ -21,19 +22,27 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Repository;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.querydsl.core.BooleanBuilder;
 import com.mcphub.domain.mcp.entity.QMcp;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
 public class McpDslRepositoryImpl implements McpDslRepository {
 
 	private final JPAQueryFactory queryFactory;
+	private final ElasticsearchOperations elasticsearchOperations;
 
 	@Override
 	public Page<McpReadModel> searchMcps(McpListRequest req, Pageable pageable) {
@@ -318,8 +327,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				metrics.avgRating.as("averageRating"),
-				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
 				mcp.lastPublishedAt.as("lastPublishedAt")
@@ -328,7 +335,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
-			.leftJoin(metrics).on(mcp.id.eq(mcp.id))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.where(mcp.id.eq(mcpId).and(mcp.deletedAt.isNull()))
