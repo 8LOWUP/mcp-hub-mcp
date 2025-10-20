@@ -37,12 +37,20 @@ public class McpDashboardAdviser {
 
 	public Page<McpResponse> getMyUploadMcpList(Pageable pageable, McpListRequest req) {
 		Long userId = securityUtils.getUserId();
+		if (userId == null) {
+			log.info("============= USER NAME IS NULL");
+			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
+		}
 		Page<McpReadModel> page = mcpDashboardService.getMyUploadMcpList(pageable, req, userId);
 		return page.map(mcpDashboardConverter::toMcpResponse);
 	}
 
 	public MyUploadMcpDetailResponse getUploadMcpDetail(Long mcpId) {
 		Long userId = securityUtils.getUserId();
+		if (userId == null) {
+			log.info("============= USER NAME IS NULL");
+			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
+		}
 		return mcpDashboardConverter.toMyUploadMcpDetailResponse(
 			mcpDashboardService.getUploadMcpDetail(userId, mcpId)
 		);
@@ -73,6 +81,7 @@ public class McpDashboardAdviser {
 	public Long publishMcp(McpPublishDataRequest request, MultipartFile file) {
 		Long userId = securityUtils.getUserId();
 		if (userId == null) {
+			log.info("============= USER NAME IS NULL");
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
 		return mcpDashboardService.publishMcp(userId, request, file);
@@ -80,6 +89,10 @@ public class McpDashboardAdviser {
 
 	public Long deleteMcp(Long mcpId) {
 		Long userId = securityUtils.getUserId();
+		if (userId == null) {
+			log.info("============= USER NAME IS NULL");
+			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
+		}
 		return mcpDashboardService.deleteMcp(userId, mcpId);
 	}
 

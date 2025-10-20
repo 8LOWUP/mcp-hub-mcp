@@ -29,7 +29,7 @@ public class McpResponse {
 	private Double averageRating;
 
 	// 저장 관련
-	private Long savedUserCount;
+	private Integer savedUserCount;
 
 	// 최초 등록일
 	private LocalDateTime publishedDate;

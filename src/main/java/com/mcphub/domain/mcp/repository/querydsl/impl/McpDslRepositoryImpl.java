@@ -1,12 +1,15 @@
 package com.mcphub.domain.mcp.repository.querydsl.impl;
 
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
 import com.mcphub.domain.mcp.entity.QArticleMcpTool;
 import com.mcphub.domain.mcp.entity.QCategory;
 import com.mcphub.domain.mcp.entity.QLicense;
+import com.mcphub.domain.mcp.entity.QMcpMetrics;
 import com.mcphub.domain.mcp.entity.QMcpReview;
 import com.mcphub.domain.mcp.entity.QPlatform;
 import com.mcphub.domain.mcp.entity.QUserMcp;
@@ -19,26 +22,34 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Repository;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.querydsl.core.BooleanBuilder;
 import com.mcphub.domain.mcp.entity.QMcp;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
 public class McpDslRepositoryImpl implements McpDslRepository {
 
 	private final JPAQueryFactory queryFactory;
+	private final ElasticsearchOperations elasticsearchOperations;
 
 	@Override
 	public Page<McpReadModel> searchMcps(McpListRequest req, Pageable pageable) {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
-
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(mcp.isPublished.eq(true).and(mcp.deletedAt.isNull()));
 		// 검색 조건
@@ -79,8 +90,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
 				mcp.developerName.as("developerName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.createdAt,
@@ -92,6 +103,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.license)
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(builder)
 			.groupBy(mcp.id)
 			.offset(pageable.getOffset())
@@ -115,7 +127,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QCategory category = QCategory.category;
 		QPlatform platform = QPlatform.platform;
 		QLicense license = QLicense.license;
-		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.bean(
@@ -126,38 +138,95 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.description,
 				mcp.imageUrl,
 				mcp.sourceUrl,
-                mcp.requestUrl,
+				mcp.requestUrl,
 				mcp.isKeyRequired,
 				mcp.developerName,
-                mcp.publishedAt,
+				mcp.publishedAt,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
 				platform.id.as("platformId"),
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				ExpressionUtils.as(
-					JPAExpressions
-						.select(userMcp.count())
-						.from(userMcp)
-						.where(userMcp.mcp.id.eq(id)),
-					"savedUserCount"
-				)
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount")
 			))
 			.from(mcp)
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(mcp.id.eq(id).and(mcp.isPublished.eq(true)).and(mcp.deletedAt.isNull()))
 			.fetchOne();
 	}
 
+	// 내가 저장한 mcplist조회
+	@Override
+	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest req) {
+		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcp mcp = QMcp.mcp;
+		QCategory category = QCategory.category;
+		QPlatform platform = QPlatform.platform;
+		QLicense license = QLicense.license;
+		BooleanBuilder builder = new BooleanBuilder();
+
+		// 기본 조건
+		builder.and(userMcp.userId.eq(userId));
+		builder.and(mcp.deletedAt.isNull());
+
+		// 검색 조건
+		if (req.getSearch() != null && !req.getSearch().isBlank()) {
+			builder.and(mcp.name.containsIgnoreCase(req.getSearch())
+			                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+		}
+
+		// 메인 쿼리
+		List<McpReadModel> content = queryFactory
+			.select(Projections.bean(McpReadModel.class,
+				mcp.id,
+				mcp.name,
+				mcp.version,
+				mcp.description,
+				mcp.imageUrl,
+				mcp.developerName,
+				mcp.sourceUrl,
+				mcp.requestUrl,
+				category.id.as("categoryId"),
+				license.id.as("licenseId"),
+				platform.id.as("platformId"),
+				platform.name.as("platformName"),
+				userMcp.createdAt
+			))
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.join(mcp.category, category)
+			.join(mcp.platform, platform)
+			.join(mcp.license, license)
+			.where(builder)
+			.orderBy(userMcp.createdAt.desc()) //sort 최신 순
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.fetch();
+
+		// 총 개수 카운트
+		long total = queryFactory
+			.select(userMcp.count())
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.where(builder)
+			.fetchOne();
+
+		return new PageImpl<>(content, pageable, total);
+
+	}
+
+	// 내가 업로드한 mcp 조회
 	@Override
 	public Page<McpReadModel> searchMyUploadMcps(McpListRequest req, Pageable pageable, Long userId) {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
-
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 		BooleanBuilder builder = new BooleanBuilder();
 
 		builder.and(mcp.userId.eq(userId)).and(mcp.deletedAt.isNull());
@@ -199,8 +268,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.lastPublishedAt
@@ -209,6 +278,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category)
 			.leftJoin(mcp.platform)
 			.leftJoin(mcp.license)
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.where(builder)
@@ -237,6 +307,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QLicense license = QLicense.license;
 		QMcpReview review = QMcpReview.mcpReview;
 		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.fields(
@@ -256,8 +327,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
 				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
 				mcp.lastPublishedAt.as("lastPublishedAt")

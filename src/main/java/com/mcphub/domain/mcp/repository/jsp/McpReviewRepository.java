@@ -14,11 +14,6 @@ import java.util.Optional;
 
 @Repository
 public interface McpReviewRepository extends JpaRepository<McpReview, Long> {
-	@Query("SELECT COALESCE(AVG(r.rating), 0) FROM McpReview r WHERE r.mcp.id = :mcpId")
-	Float getAverageRating(@Param("mcpId") Long mcpId);
-
-	@Query("SELECT COUNT(r) FROM McpReview r WHERE r.mcp.id = :mcpId")
-	Integer getReviewCount(@Param("mcpId") Long mcpId);
 
 	Optional<McpReview> findByIdAndDeletedAtIsNull(Long id);
 

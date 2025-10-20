@@ -33,7 +33,7 @@ public class McpReadModel {
 	private String requestUrl;
 	private boolean alreadySaved;
 	private Double averageRating;     // null 가능
-	private Long savedUserCount;
+	private Integer savedUserCount;
 	private boolean isPublished;
 	private LocalDateTime publishedAt;
 	private LocalDateTime lastPublishedAt;

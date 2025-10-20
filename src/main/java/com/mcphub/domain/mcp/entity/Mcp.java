@@ -28,8 +28,6 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "mcp")
-// TODO : 우선 SOFT DELETE 진행 , 추후 adminMcp 레포지토리를 따로 빼서 삭제 관리할지 확인 여부 필요
-@Where(clause = "deleted_at is null")
 public class Mcp extends BaseEntity {
 
 	@Id

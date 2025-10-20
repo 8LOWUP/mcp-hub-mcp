@@ -49,8 +49,6 @@ public class McpDashboardConverter {
 		                                .platformName(readModel.getPlatformName())
 		                                .licenseId(readModel.getLicenseId())
 		                                .licenseName(readModel.getLicenseName())
-		                                .averageRating(readModel.getAverageRating())
-		                                .savedUserCount(readModel.getSavedUserCount())
 		                                .isPublished(readModel.isPublished())
 		                                .publishedAt(readModel.getPublishedAt())
 		                                .lastPublishedAt(readModel.getLastPublishedAt())

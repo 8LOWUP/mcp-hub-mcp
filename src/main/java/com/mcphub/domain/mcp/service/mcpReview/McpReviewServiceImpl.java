@@ -2,7 +2,7 @@ package com.mcphub.domain.mcp.service.mcpReview;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mcphub.domain.error.McpErrorStatus;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpReviewListRequest;
 import com.mcphub.domain.mcp.dto.request.McpReviewRequest;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReviewReadModel;
@@ -11,8 +11,7 @@ import com.mcphub.domain.mcp.entity.McpReview;
 import com.mcphub.domain.mcp.grpc.MemberGrpcClient;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpReviewRepository;
-import com.mcphub.domain.member.grpc.GetMemberInfoRequest;
-import com.mcphub.domain.member.grpc.MemberResponse;
+import com.mcphub.domain.mcp.service.McpMetrics.McpMetricsService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +21,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +35,7 @@ public class McpReviewServiceImpl implements McpReviewService {
 	private final McpReviewRepository mcpReviewRepository;
 	private final RedisTemplate<String, String> redisTemplate;
 	private final McpRepository mcpRepository;
+	private final McpMetricsService mcpMetricsService;
 	private final MemberGrpcClient memberGrpcClient;
 	private final ObjectMapper objectMapper;
 
@@ -71,7 +72,10 @@ public class McpReviewServiceImpl implements McpReviewService {
 		                               .rating(request.getRating())
 		                               .content(request.getComment())
 		                               .build();
-		return mcpReviewRepository.save(mcpReview).getId();
+		Long reviewId = mcpReviewRepository.save(mcpReview).getId();
+
+		mcpMetricsService.increaseReviewCount(mcpId, request.getRating());
+		return reviewId;
 	}
 
 	@Override
@@ -83,9 +87,14 @@ public class McpReviewServiceImpl implements McpReviewService {
 		if (!mcpReview.getUserId().equals(userId)) {
 			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
+		Double oldRating = mcpReview.getRating();
 		mcpReview.setRating(request.getRating());
 		mcpReview.setContent(request.getComment());
-		return mcpReviewRepository.save(mcpReview).getId();
+		Long newId = mcpReviewRepository.save(mcpReview).getId();
+
+		mcpMetricsService.updateReview(mcpReview.getMcp().getId(), oldRating, request.getRating());
+
+		return newId;
 	}
 
 	@Override
@@ -98,6 +107,10 @@ public class McpReviewServiceImpl implements McpReviewService {
 			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 		mcpReviewRepository.delete(mcpReview);
+
+		//여기에 카운트 추가
+		mcpMetricsService.decreaseReviewCount(mcpReview.getMcp().getId(), mcpReview.getRating());
+
 		return reviewId;
 	}
 

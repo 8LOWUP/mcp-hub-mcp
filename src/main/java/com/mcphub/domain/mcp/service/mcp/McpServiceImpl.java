@@ -1,15 +1,18 @@
 package com.mcphub.domain.mcp.service.mcp;
 
-import com.mcphub.domain.error.McpErrorStatus;
+import com.mcphub.domain.mcp.entity.McpMetrics;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
 import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.entity.UserMcp;
+import com.mcphub.domain.mcp.repository.jsp.McpMetricsRepository;
 import com.mcphub.domain.mcp.repository.jsp.UserMcpRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.domain.mcp.service.McpMetrics.McpMetricsService;
 import com.mcphub.global.common.exception.RestApiException;
-import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,7 @@ public class McpServiceImpl implements McpService {
 	private final McpRepository mcpRepository;
 	private final UserMcpRepository userMcpRepository;
 	private final McpDslRepository mcpDslRepository;
+	private final McpMetricsService mcpMetricsService;
 	//private final ProducerService producerService;
 
 	@Override
@@ -77,15 +81,7 @@ public class McpServiceImpl implements McpService {
 		                            .build();
 
 		UserMcp saved = userMcpRepository.save(newUserMcp);
-
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			producerService.sendMcpSavedEvent(userId, mcpId);
-		// 		}
-		// 	});
-		// }
+		mcpMetricsService.increaseSavedCount(mcpId);
 
 		return saved.getId();
 	}
@@ -100,42 +96,14 @@ public class McpServiceImpl implements McpService {
 		if (deleted == 0) {
 			throw new RestApiException(McpErrorStatus._ALREADY_DELETED_MCP);
 		}
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			producerService.sendMcpDeletedEvent(userId, mcpId);
-		// 		}
-		// 	});
-		// }
+
+		mcpMetricsService.decreaseSavedCount(mcpId);
 		return mcp.getId();
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest request) {
-
-		Page<UserMcp> userMcpPage = userMcpRepository.findByUserId(userId, pageable);
-
-		return userMcpPage.map(userMcp -> {
-			Mcp mcp = userMcp.getMcp();
-			return McpReadModel.builder()
-			                   .id(mcp.getId())
-			                   .name(mcp.getName())
-			                   .version(mcp.getVersion())
-			                   .description(mcp.getDescription())
-			                   .imageUrl(mcp.getImageUrl())
-			                   .developerName(mcp.getDeveloperName())
-			                   .sourceUrl(mcp.getSourceUrl())
-			                   .requestUrl(mcp.getRequestUrl())
-			                   .categoryId(mcp.getCategory().getId())
-			                   .licenseId(mcp.getLicense().getId())
-			                   .platformId(mcp.getPlatform().getId())
-			                   .platformName(mcp.getPlatform().getName())
-			                   .createdAt(userMcp.getCreatedAt())
-			                   .build();
-		});
-
+		return mcpDslRepository.getMySavedMcpList(userId, pageable, request);
 	}
-
 }

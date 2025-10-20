@@ -1,4 +1,4 @@
-package com.mcphub.domain.error;
+package com.mcphub.domain.mcp.error;
 
 import com.mcphub.global.common.exception.code.BaseCodeDto;
 import com.mcphub.global.common.exception.code.BaseCodeInterface;
