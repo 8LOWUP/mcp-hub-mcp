@@ -28,6 +28,7 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 		log.info(">>>>>>>>>>>>> start searchByVector");
 		try {
 			// 1. SearchRequest 생성
+			log.info("11111111111111111111");
 			SearchRequest searchRequest = SearchRequest.of(s -> s
 				.index("mcp_index")
 				.size(k)
@@ -38,12 +39,12 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 					.numCandidates(100L)
 				)
 			);
-
+			log.info("2222222222222222222");
 			// 2. Map으로 검색 결과 받기
 			SearchResponse<Map> response = elasticsearchClient.search(searchRequest, Map.class);
-
+			log.info("33333333333333333333");
 			List<McpVector> results = new ArrayList<>();
-
+			log.info("4444444444444444444");
 			// 3. Map -> McpVector 변환
 			for (Hit<Map> hit : response.hits().hits()) {
 				Map source = hit.source();
@@ -66,7 +67,7 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 					results.add(mcp);
 				}
 			}
-
+			log.info("55555555555555555555");
 			return results;
 
 		} catch (Exception e) {
