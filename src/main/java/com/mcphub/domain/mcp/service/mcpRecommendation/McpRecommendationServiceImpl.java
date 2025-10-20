@@ -46,27 +46,61 @@ public class McpRecommendationServiceImpl implements McpRecommendationService {
 			List<McpVector> results = new ArrayList<>();
 			log.info("4444444444444444444");
 			// 3. Map -> McpVector 변환
-			for (Hit<Map> hit : response.hits().hits()) {
-				Map source = hit.source();
-				if (source != null) {
-					// embedding 변환
-					List<Number> embeddingList = (List<Number>)source.get("embedding");
-					float[] embedding = new float[embeddingList.size()];
-					for (int i = 0; i < embeddingList.size(); i++) {
-						embedding[i] = embeddingList.get(i).floatValue();
-					}
+            for (Hit<Map> hit : response.hits().hits()) {
+                Map source = hit.source();
+                if (source == null) {
+                    // 로그 남기기
+                    log.warn("Hit source is null, skipping...");
+                    continue;
+                }
 
-					// McpVector 객체 생성
-					McpVector mcp = new McpVector(
-						((Number)source.get("mcpId")).longValue(),
-						(String)source.get("name"),
-						(String)source.get("description"),
-						embedding
-					);
+                try {
+                    Object embeddingObj = source.get("embedding");
+                    if (!(embeddingObj instanceof List)) {
+                        log.warn("Invalid embedding type: {}", embeddingObj);
+                        continue;
+                    }
 
-					results.add(mcp);
-				}
-			}
+                    List<?> rawList = (List<?>) embeddingObj;
+                    float[] embedding = new float[rawList.size()];
+                    boolean embeddingValid = true;
+
+                    for (int i = 0; i < rawList.size(); i++) {
+                        Object value = rawList.get(i);
+                        if (!(value instanceof Number)) {
+                            log.warn("Invalid embedding value at index {}: {}", i, value);
+                            embeddingValid = false;
+                            break;
+                        }
+                        embedding[i] = ((Number) value).floatValue();
+                    }
+
+                    if (!embeddingValid) {
+                        log.warn("Embedding skipped due to invalid values: {}", embeddingObj);
+                        continue;
+                    }
+
+                    Object mcpIdObj = source.get("mcpId");
+                    if (!(mcpIdObj instanceof Number)) {
+                        log.warn("Invalid mcpId type: {}", mcpIdObj);
+                        continue;
+                    }
+                    long mcpId = ((Number) mcpIdObj).longValue();
+
+                    String name = source.get("name") instanceof String ? (String) source.get("name") : "";
+                    String description = source.get("description") instanceof String ? (String) source.get("description") : "";
+
+                    McpVector mcp = new McpVector(mcpId, name, description, embedding);
+                    results.add(mcp);
+
+                } catch (ClassCastException e) {
+                    log.error("Type casting error while processing source: {}", source, e);
+                } catch (NumberFormatException e) {
+                    log.error("Number format error while processing source: {}", source, e);
+                } catch (Exception e) {
+                    log.error("Unexpected error while processing source: {}", source, e);
+                }
+            }
 			log.info("55555555555555555555");
 			return results;
 
