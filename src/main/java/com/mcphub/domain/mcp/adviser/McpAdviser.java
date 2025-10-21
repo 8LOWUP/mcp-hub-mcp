@@ -27,7 +27,8 @@ public class McpAdviser {
 	}
 
 	public McpDetailResponse getMcpDetail(Long id) {
-		return mcpConverter.toMcpDetailResponse(mcpService.getMcpDetail(id));
+		Long userId = securityUtils.getUserId();
+		return mcpConverter.toMcpDetailResponse(mcpService.getMcpDetail(id, userId));
 	}
 
 	public Long saveUserMcp(Long mcpId) {

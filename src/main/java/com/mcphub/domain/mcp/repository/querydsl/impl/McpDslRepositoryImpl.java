@@ -1,56 +1,113 @@
 package com.mcphub.domain.mcp.repository.querydsl.impl;
 
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.MyUploadMcpRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
 import com.mcphub.domain.mcp.dto.response.readmodel.McpReadModel;
 import com.mcphub.domain.mcp.dto.response.readmodel.MyUploadMcpDetailReadModel;
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
 import com.mcphub.domain.mcp.entity.QArticleMcpTool;
 import com.mcphub.domain.mcp.entity.QCategory;
 import com.mcphub.domain.mcp.entity.QLicense;
+import com.mcphub.domain.mcp.entity.QMcpMetrics;
 import com.mcphub.domain.mcp.entity.QMcpReview;
 import com.mcphub.domain.mcp.entity.QPlatform;
 import com.mcphub.domain.mcp.entity.QUserMcp;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Repository;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.querydsl.core.BooleanBuilder;
 import com.mcphub.domain.mcp.entity.QMcp;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
 public class McpDslRepositoryImpl implements McpDslRepository {
 
 	private final JPAQueryFactory queryFactory;
+	private final ElasticsearchOperations elasticsearchOperations;
 
 	@Override
 	public Page<McpReadModel> searchMcps(McpListRequest req, Pageable pageable) {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(mcp.isPublished.eq(true).and(mcp.deletedAt.isNull()));
-		// 검색 조건
+
+		List<Long> matchedIds = null;
+		System.out.println("---------1 >>>>>>>>>>>>>>>>> 검색어: " + req.getSearch());
+
 		if (req.getSearch() != null && !req.getSearch().isBlank()) {
-			builder.and(mcp.name.containsIgnoreCase(req.getSearch())
-			                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+			System.out.println("---------2 Elasticsearch 검색 시작 ---------");
+
+			NativeQuery query = new NativeQueryBuilder()
+				.withQuery(QueryBuilders.multiMatch(m -> m
+					.query(req.getSearch())
+					.fields(List.of(
+						"title^3.0",     // 제목 가중치 높게
+						"content^1.5"    // 내용 가중치 낮게
+					))
+					.fuzziness("AUTO")
+					.operator(co.elastic.clients.elasticsearch._types.query_dsl.Operator.Or) // 여러 단어 중 하나라도 포함되면 검색
+					.type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields) // 가장 유사한 필드 기준
+				))
+				.withPageable(PageRequest.of(0, 1000))
+				.build();
+
+			System.out.println("[Elasticsearch Query] >>> " + query.getQuery());
+
+			var searchHits = elasticsearchOperations.search(query, McpElasticsearch.class);
+
+			System.out.println("[Elasticsearch Result Count] >>> " + searchHits.getSearchHits().size());
+			searchHits.forEach(hit -> {
+				System.out.println("----");
+				System.out.println("Index: " + hit.getIndex());
+				System.out.println("Score: " + hit.getScore());
+				System.out.println("Source: " + hit.getContent());
+			});
+
+			matchedIds = searchHits
+				.stream()
+				.map(hit -> hit.getContent().getMcpId())
+				.distinct()
+				.toList();
+
+			if (matchedIds.isEmpty()) {
+				System.out.println("---------3 빈페이지 반환 (검색 결과 없음)");
+				if (req.getSearch() != null && !req.getSearch().isBlank()) {
+					System.out.println("------------4 ; DB 검색어 쿼리 수행");
+					builder.and(mcp.name.containsIgnoreCase(req.getSearch())
+					                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+				}
+			} else {
+				builder.and(mcp.id.in(matchedIds));
+			}
 		}
 
-		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
-		// 정렬 조건
 		OrderSpecifier<?> orderSpecifier;
 		if ("popular".equalsIgnoreCase(req.getSort())) {
 			orderSpecifier = userMcp.count().desc();
@@ -60,7 +117,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			orderSpecifier = mcp.createdAt.desc(); // 기본 최신순
 		}
 
-		// 실제 조회
+		//실제 조회
 		List<McpReadModel> content = queryFactory
 			.select(Projections.bean(McpReadModel.class,
 				mcp.id,
@@ -76,8 +133,9 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				mcp.developerName.as("developerName"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.createdAt,
@@ -89,6 +147,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.license)
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(builder)
 			.groupBy(mcp.id)
 			.offset(pageable.getOffset())
@@ -96,12 +155,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.orderBy(orderSpecifier)
 			.fetch();
 
-		// 전체 카운트
-		long total = queryFactory
-			.select(mcp.count())
-			.from(mcp)
-			.where(builder)
-			.fetchOne();
+		long total = matchedIds != null ? matchedIds.size() :
+			queryFactory.select(mcp.count()).from(mcp).where(builder).fetchOne();
 
 		return new PageImpl<>(content, pageable, total);
 	}
@@ -112,6 +167,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QCategory category = QCategory.category;
 		QPlatform platform = QPlatform.platform;
 		QLicense license = QLicense.license;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.bean(
@@ -122,29 +178,95 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.description,
 				mcp.imageUrl,
 				mcp.sourceUrl,
+				mcp.requestUrl,
 				mcp.isKeyRequired,
-
+				mcp.developerName,
+				mcp.publishedAt,
 				category.id.as("categoryId"),
 				category.name.as("categoryName"),
 				platform.id.as("platformId"),
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
-				license.name.as("licenseName")
+				license.name.as("licenseName"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount")
 			))
 			.from(mcp)
 			.leftJoin(mcp.category, category)
 			.leftJoin(mcp.platform, platform)
 			.leftJoin(mcp.license, license)
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.where(mcp.id.eq(id).and(mcp.isPublished.eq(true)).and(mcp.deletedAt.isNull()))
 			.fetchOne();
 	}
 
+	// 내가 저장한 mcplist조회
+	@Override
+	public Page<McpReadModel> getMySavedMcpList(Long userId, Pageable pageable, MyUploadMcpRequest req) {
+		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcp mcp = QMcp.mcp;
+		QCategory category = QCategory.category;
+		QPlatform platform = QPlatform.platform;
+		QLicense license = QLicense.license;
+		BooleanBuilder builder = new BooleanBuilder();
+
+		// 기본 조건
+		builder.and(userMcp.userId.eq(userId));
+		builder.and(mcp.deletedAt.isNull());
+
+		// 검색 조건
+		if (req.getSearch() != null && !req.getSearch().isBlank()) {
+			builder.and(mcp.name.containsIgnoreCase(req.getSearch())
+			                    .or(mcp.description.containsIgnoreCase(req.getSearch())));
+		}
+
+		// 메인 쿼리
+		List<McpReadModel> content = queryFactory
+			.select(Projections.bean(McpReadModel.class,
+				mcp.id,
+				mcp.name,
+				mcp.version,
+				mcp.description,
+				mcp.imageUrl,
+				mcp.developerName,
+				mcp.sourceUrl,
+				mcp.requestUrl,
+				category.id.as("categoryId"),
+				license.id.as("licenseId"),
+				platform.id.as("platformId"),
+				platform.name.as("platformName"),
+				userMcp.createdAt
+			))
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.join(mcp.category, category)
+			.join(mcp.platform, platform)
+			.join(mcp.license, license)
+			.where(builder)
+			.orderBy(userMcp.createdAt.desc()) //sort 최신 순
+			.offset(pageable.getOffset())
+			.limit(pageable.getPageSize())
+			.fetch();
+
+		// 총 개수 카운트
+		long total = queryFactory
+			.select(userMcp.count())
+			.from(userMcp)
+			.join(userMcp.mcp, mcp)
+			.where(builder)
+			.fetchOne();
+
+		return new PageImpl<>(content, pageable, total);
+
+	}
+
+	// 내가 업로드한 mcp 조회
 	@Override
 	public Page<McpReadModel> searchMyUploadMcps(McpListRequest req, Pageable pageable, Long userId) {
 		QMcp mcp = QMcp.mcp;
 		QUserMcp userMcp = QUserMcp.userMcp;
 		QMcpReview review = QMcpReview.mcpReview;
-
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 		BooleanBuilder builder = new BooleanBuilder();
 
 		builder.and(mcp.userId.eq(userId)).and(mcp.deletedAt.isNull());
@@ -156,8 +278,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		}
 
 		// 카테고리 조건
-		if (req.getCategory() != null && !req.getCategory().isBlank()) {
-			builder.and(mcp.category.name.eq(req.getCategory()));
+		if (req.getCategory() != null) {
+			builder.and(mcp.category.id.eq(req.getCategory()));
 		}
 
 		// 정렬 조건
@@ -186,8 +308,8 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				mcp.platform.name.as("platformName"),
 				mcp.license.id.as("licenseId"),
 				mcp.license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
+				metrics.avgRating.as("averageRating"),
+				metrics.savedUserCount.as("savedUserCount"),
 				mcp.isPublished,
 				mcp.publishedAt,
 				mcp.lastPublishedAt
@@ -196,6 +318,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 			.leftJoin(mcp.category)
 			.leftJoin(mcp.platform)
 			.leftJoin(mcp.license)
+			.leftJoin(metrics).on(metrics.mcp.eq(mcp))
 			.leftJoin(userMcp).on(userMcp.mcp.eq(mcp))
 			.leftJoin(review).on(review.mcp.eq(mcp))
 			.where(builder)
@@ -224,6 +347,7 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QLicense license = QLicense.license;
 		QMcpReview review = QMcpReview.mcpReview;
 		QUserMcp userMcp = QUserMcp.userMcp;
+		QMcpMetrics metrics = QMcpMetrics.mcpMetrics;
 
 		return queryFactory
 			.select(Projections.fields(
@@ -243,8 +367,6 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 				platform.name.as("platformName"),
 				license.id.as("licenseId"),
 				license.name.as("licenseName"),
-				review.rating.avg().as("averageRating"),
-				userMcp.count().as("savedUserCount"),
 				mcp.isPublished.as("isPublished"),
 				mcp.publishedAt,
 				mcp.lastPublishedAt.as("lastPublishedAt")
@@ -277,9 +399,9 @@ public class McpDslRepositoryImpl implements McpDslRepository {
 		QArticleMcpTool mcpTool = QArticleMcpTool.articleMcpTool;
 		List<McpToolResponse> tools = queryFactory
 			.select(Projections.bean(McpToolResponse.class,
-				mcpTool.id,
-				mcpTool.name,
-				mcpTool.content
+				mcpTool.id.as("id"),
+				mcpTool.name.as("name"),
+				mcpTool.content.as("content")
 			))
 			.from(mcpTool)
 			.where(mcpTool.mcp.id.eq(mcpId))

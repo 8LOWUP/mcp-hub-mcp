@@ -57,7 +57,7 @@ public class McpReviewController {
 		@ApiResponse(responseCode = "404", description = "MCP가 존재하지않음")
 	})
 	@PostMapping("/{mcpId}")
-	public BaseResponse<Long> saveReview(@PathVariable Long mcpId, @RequestBody McpReviewRequest request) {
+	public BaseResponse<Long> saveReview(@PathVariable Long mcpId, @Valid @RequestBody McpReviewRequest request) {
 		return BaseResponse.onSuccess(mcpReviewAdviser.saveReview(mcpId, request));
 	}
 
@@ -69,7 +69,7 @@ public class McpReviewController {
 		@ApiResponse(responseCode = "404", description = "해당 리뷰가 존재하지않음")
 	})
 	@PatchMapping("/{reviewId}")
-	public BaseResponse<Long> updateReview(@PathVariable Long reviewId, @RequestBody McpReviewRequest request) {
+	public BaseResponse<Long> updateReview(@PathVariable Long reviewId, @Valid @RequestBody McpReviewRequest request) {
 		return BaseResponse.onSuccess(mcpReviewAdviser.updateReview(reviewId, request));
 	}
 

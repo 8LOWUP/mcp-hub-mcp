@@ -4,11 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,13 +23,13 @@ public class McpDetailResponse {
 	private String sourceUrl;
 	private String imageUrl;
 	private Boolean isKeyRequired;
-
+	private String developerName;
 	private String categoryName;
 	private String platformName;
 	private String licenseName;
-
+	private boolean alreadySaved;
 	private Double averageRating;
-	private Long savedUserCount;
+	private Integer savedUserCount;
 
 	private List<McpToolResponse> tools;
 

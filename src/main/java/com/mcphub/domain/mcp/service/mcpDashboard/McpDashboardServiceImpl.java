@@ -1,7 +1,11 @@
 package com.mcphub.domain.mcp.service.mcpDashboard;
 
+import com.mcphub.domain.mcp.entity.McpElasticsearch;
+import com.mcphub.domain.mcp.entity.McpMetrics;
+import com.mcphub.domain.mcp.error.McpErrorStatus;
 import com.mcphub.domain.mcp.dto.request.McpDraftRequest;
 import com.mcphub.domain.mcp.dto.request.McpListRequest;
+import com.mcphub.domain.mcp.dto.request.McpPublishDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUploadDataRequest;
 import com.mcphub.domain.mcp.dto.request.McpUrlRequest;
 import com.mcphub.domain.mcp.dto.response.api.McpToolResponse;
@@ -12,15 +16,19 @@ import com.mcphub.domain.mcp.entity.Category;
 import com.mcphub.domain.mcp.entity.License;
 import com.mcphub.domain.mcp.entity.Mcp;
 import com.mcphub.domain.mcp.entity.Platform;
+import com.mcphub.domain.mcp.repository.elasticsearch.McpElasticsearchRepository;
 import com.mcphub.domain.mcp.repository.jsp.ArticleMcpToolRepository;
 import com.mcphub.domain.mcp.repository.jsp.CategoryRepository;
 import com.mcphub.domain.mcp.repository.jsp.LicenseRepository;
+import com.mcphub.domain.mcp.repository.jsp.McpMetricsRepository;
 import com.mcphub.domain.mcp.repository.jsp.McpRepository;
 import com.mcphub.domain.mcp.repository.jsp.PlatformRepository;
 import com.mcphub.domain.mcp.repository.querydsl.McpDslRepository;
+import com.mcphub.domain.mcp.service.McpMetrics.McpMetricsService;
 import com.mcphub.global.common.exception.RestApiException;
 import com.mcphub.global.common.exception.code.status.GlobalErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,21 +42,25 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class McpDashboardServiceImpl implements McpDashboardService {
 
-	//TODO
-	private String uploadDir = "";
+	//TODO prod 올릴 때 해당 경로 존재해야함 + yml 수정
+	@Value("${spring.file.upload-dir}")
+	private String uploadDir;
 
-	private final String imageUrl = "http:localhost:8081/images/";
 	private final McpDslRepository mcpDslRepository;
 	private final McpRepository mcpRepository;
 	private final PlatformRepository platformRepository;
 	private final LicenseRepository licenseRepository;
 	private final CategoryRepository categoryRepository;
 	private final ArticleMcpToolRepository mcpToolRepository;
+	private final McpMetricsRepository mcpMetricsRepository;
+	private final McpElasticsearchRepository mcpElasticsearchRepository;
 	//private final ProducerService producerService;
 
 	@Override
@@ -61,15 +73,15 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional(readOnly = true)
 	public MyUploadMcpDetailReadModel getUploadMcpDetail(Long userId, Long mcpId) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 
 		MyUploadMcpDetailReadModel rm = mcpDslRepository.getMyUploadMcpDetail(mcpId);
 		if (rm == null) {
-			throw new RestApiException((GlobalErrorStatus._NOT_FOUND));
+			throw new RestApiException((McpErrorStatus._NOT_FOUND));
 		}
 		List<McpToolResponse> tools = mcpDslRepository.getMcpTools(mcpId);
 		rm.setTools(tools);
@@ -90,10 +102,10 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	@Transactional
 	public Long uploadMcpUrl(Long userId, Long mcpId, McpUrlRequest request) {
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
 
 		mcp.setRequestUrl(request.getUrl());
@@ -102,18 +114,25 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 	@Override
 	@Transactional
-	public Long uploadMcpMetaData(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
-
-		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		//true에서 false로 전환시에만 이벤트 발생
-		boolean isChanged = Boolean.TRUE.equals(mcp.getIsPublished());
-		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+	public Long uploadMcpMetaData(Long userId, McpUploadDataRequest request, MultipartFile file) {
+		log.info("============= Meta Service Start  ===========");
+		Mcp mcp;
+		if (request.getMcpId() == null) {
+			log.info("NO MCP DATA");
+			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
+		} else {
+			log.info("ALREADY MCP DATA");
+			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
+			                   .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
+			if (!mcp.getUserId().equals(userId)) {
+				log.info("SAVE MCP USER != USER_ID (differ)");
+				throw new RestApiException(McpErrorStatus._FORBIDDEN);
+			}
 		}
-
+		mcp.setImageUrl(null);
 		try {
 			if (file != null && !file.isEmpty()) {
+				log.info("======= START SAVE FILE PROCESS ========");
 				// 원본 파일명에서 확장자 추출
 				String originalName = file.getOriginalFilename();   // 예: "logo.png"
 				String ext = "";
@@ -122,8 +141,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				}
 
 				// mcpId 기반 저장 파일명 생성
-				String fileName = mcpId.toString() + ext;
-				mcp.setImageUrl(imageUrl + fileName);
+				String fileName = mcp.getId().toString() + ext;
+				mcp.setImageUrl("/mcps/images/" + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
 				File directory = new File(uploadDir.replace("file:", ""));
@@ -134,6 +153,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				// 최종 파일 저장
 				File dest = new File(directory, fileName);
 				file.transferTo(dest);
+				log.info("======= SAVE FILE PROCESS END ========");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -144,7 +164,7 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		Category category = categoryRepository.findById(request.getCategoryId())
-		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                      .orElse(null);
 		Platform platform = platformRepository.findByName(request.getPlatformName())
 		                                      .orElse(null);
 		if (platform == null) {
@@ -153,8 +173,12 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 			platformRepository.save(platform);
 		}
 		License license = licenseRepository.findById(request.getLicenseId())
-		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                   .orElse(null);
 
+		if (request.getName() == null || request.getName().isEmpty()) {
+			log.info("--------------- PLEASE ENTER NAME");
+			throw new RestApiException(McpErrorStatus._NAME_PLEASE);
+		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
 		mcp.setDescription(request.getDescription());
@@ -193,16 +217,22 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		return mcp.getId();
 	}
 
-	//TODO 배포시 필수로 필요한 것들 저장하게 해야함
 	@Override
 	@Transactional
-	public Long publishMcp(Long userId, Long mcpId, McpUploadDataRequest request, MultipartFile file) {
-		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
-		boolean isChanged = Boolean.FALSE.equals(mcp.getIsPublished());
-		if (!mcp.getUserId().equals(userId)) {
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+	public Long publishMcp(Long userId, McpPublishDataRequest request, MultipartFile file) {
+		Mcp mcp;
+
+		if (request.getMcpId() == null) {
+			mcp = mcpRepository.save(Mcp.builder().userId(userId).build());
+		} else {
+			mcp = mcpRepository.findByIdAndDeletedAtIsNull(request.getMcpId())
+			                   .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
+			if (!mcp.getUserId().equals(userId)) {
+				throw new RestApiException(McpErrorStatus._FORBIDDEN);
+			}
 		}
+
+		mcp.setImageUrl(null);
 		try {
 			if (file != null && !file.isEmpty()) {
 				// 원본 파일명에서 확장자 추출
@@ -213,8 +243,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 				}
 
 				// mcpId 기반 저장 파일명 생성
-				String fileName = mcpId.toString() + ext;
-				mcp.setImageUrl(imageUrl + fileName);
+				String fileName = mcp.getId().toString() + ext;
+				mcp.setImageUrl("/mcps/images/" + fileName);
 
 				// 업로드 경로 (yml에 file:/ 로 돼 있으니 prefix 제거)
 				File directory = new File(uploadDir.replace("file:", ""));
@@ -235,7 +265,8 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		Category category = categoryRepository.findById(request.getCategoryId())
-		                                      .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                      .orElseThrow(
+			                                      () -> new RestApiException(McpErrorStatus._CATEGORY_PLEASE));
 		Platform platform = platformRepository.findByName(request.getPlatformName())
 		                                      .orElse(null);
 		if (platform == null) {
@@ -245,8 +276,11 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 		}
 
 		License license = licenseRepository.findById(request.getLicenseId())
-		                                   .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                                   .orElseThrow(() -> new RestApiException(McpErrorStatus._LICENCE_PLEASE));
 
+		if (request.getName() == null || request.getName().isEmpty()) {
+			throw new RestApiException(McpErrorStatus._NAME_PLEASE);
+		}
 		mcp.setName(request.getName());
 		//mcp.setVersion(request.getVersion());
 		mcp.setDescription(request.getDescription());
@@ -279,18 +313,29 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 
 			mcpToolRepository.saveAll(tools);
 		}
-		//URL NPE 발생가능성있음...
-		// if (isChanged || !mcp.getRequestUrl().equals(request.getRequestUrl())) {
-		// 	if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 			@Override
-		// 			public void afterCommit() {
-		// 				producerService.sendUrlSavedEvent(mcpId, mcp.getRequestUrl());
-		// 			}
-		// 		});
-		// 	}
-		// }
-		return mcpRepository.save(mcp).getId();
+		McpMetrics metrics = mcpMetricsRepository.findByMcp(mcp).orElse(null);
+		if (metrics == null) {
+			mcpMetricsRepository.save(McpMetrics.builder()
+			                                    .mcp(mcp)
+			                                    .savedUserCount(0)
+			                                    .reviewCount(0)
+			                                    .avgRating(0.0)
+			                                    .reviewScoreSum(0.0)
+			                                    .build());
+		}
+
+		Long savedMcpId = mcpRepository.save(mcp).getId();
+
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					upsertMcpElasticsearch(mcp);
+				}
+			});
+		}
+
+		return savedMcpId;
 	}
 
 	@Override
@@ -298,22 +343,40 @@ public class McpDashboardServiceImpl implements McpDashboardService {
 	public Long deleteMcp(Long userId, Long mcpId) {
 
 		Mcp mcp = mcpRepository.findByIdAndDeletedAtIsNull(mcpId)
-		                       .orElseThrow(() -> new RestApiException(GlobalErrorStatus._NOT_FOUND));
+		                       .orElseThrow(() -> new RestApiException(McpErrorStatus._NOT_FOUND));
 
 		if (!mcp.getUserId().equals(userId)) {
 			//TODO : 본인 소유가 아닌 MCP 접근에 대한 에러 코드를 재작성할 필요가 있어보임
-			throw new RestApiException(GlobalErrorStatus._FORBIDDEN);
+			throw new RestApiException(McpErrorStatus._FORBIDDEN);
 		}
-
 		mcp.delete();
-		// if (TransactionSynchronizationManager.isSynchronizationActive()) {
-		// 	TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-		// 		@Override
-		// 		public void afterCommit() {
-		// 			producerService.sendUrlDeletedEvent(mcpId);
-		// 		}
-		// 	});
-		// }
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCommit() {
+					deleteMcpElasticsearch(mcpId);
+				}
+			});
+		}
 		return mcpRepository.save(mcp).getId();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<String> getPlatform() {
+		return platformRepository.findAll().stream().map(Platform::getName).collect(Collectors.toList());
+	}
+
+	private void upsertMcpElasticsearch(Mcp mcp) {
+		McpElasticsearch doc = McpElasticsearch.builder()
+		                                       .mcpId(mcp.getId())
+		                                       .title(mcp.getName())
+		                                       .content(mcp.getDescription())
+		                                       .build();
+		mcpElasticsearchRepository.save(doc);
+	}
+
+	private void deleteMcpElasticsearch(Long mcpId) {
+		mcpElasticsearchRepository.deleteById(mcpId);
 	}
 }

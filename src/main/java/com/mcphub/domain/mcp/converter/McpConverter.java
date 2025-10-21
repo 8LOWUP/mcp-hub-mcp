@@ -26,6 +26,7 @@ public class McpConverter {
 		                  .isKeyRequired(m.getIsKeyRequired())
 		                  .categoryName(m.getCategoryName())
 		                  .platformName(m.getPlatformName())
+		                  .developerName(m.getDeveloperName())
 		                  .licenseName(m.getLicenseName())
 		                  .averageRating(m.getAverageRating())
 		                  .savedUserCount(m.getSavedUserCount())
@@ -43,10 +44,15 @@ public class McpConverter {
 		                        .isKeyRequired(m.getIsKeyRequired())
 		                        .categoryName(m.getCategoryName())
 		                        .platformName(m.getPlatformName())
+		                        .developerName(m.getDeveloperName())
+		                        .requestUrl(m.getRequestUrl())
+		                        .sourceUrl(m.getSourceUrl())
+		                        .publishDate(m.getPublishedAt().toLocalDate())
 		                        .licenseName(m.getLicenseName())
 		                        .averageRating(m.getAverageRating())
 		                        .savedUserCount(m.getSavedUserCount())
 		                        .tools(m.getTools())
+		                        .alreadySaved(m.isAlreadySaved())
 		                        .build();
 	}
 
@@ -57,9 +63,11 @@ public class McpConverter {
 		                         .version(m.getVersion())
 		                         .description(m.getDescription())
 		                         .imageUrl(m.getImageUrl())
-		                         .categoryName(m.getCategoryName())
+		                         .categoryId(m.getCategoryId())
+		                         .licenseId(m.getLicenseId())
+		                         .platformId(m.getPlatformId())
 		                         .platformName(m.getPlatformName())
-		                         .licenseName(m.getLicenseName())
+		                         .createdAt(m.getCreatedAt())
 		                         .build();
 	}
 }

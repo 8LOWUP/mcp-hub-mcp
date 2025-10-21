@@ -23,16 +23,17 @@ public class McpReadModel {
 	private String imageUrl;
 	private String sourceUrl;
 	private Boolean isKeyRequired;
-
+	private String developerName;
 	private Long categoryId;
 	private String categoryName;
 	private Long platformId;
 	private String platformName;
 	private Long licenseId;
 	private String licenseName;
-
+	private String requestUrl;
+	private boolean alreadySaved;
 	private Double averageRating;     // null 가능
-	private Long savedUserCount;
+	private Integer savedUserCount;
 	private boolean isPublished;
 	private LocalDateTime publishedAt;
 	private LocalDateTime lastPublishedAt;
