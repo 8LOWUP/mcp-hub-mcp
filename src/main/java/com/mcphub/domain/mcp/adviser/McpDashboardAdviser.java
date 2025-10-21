@@ -72,9 +72,6 @@ public class McpDashboardAdviser {
 			log.info("============= USER NAME IS NULL");
 			throw new RestApiException(GlobalErrorStatus._UNAUTHORIZED);
 		}
-		float[] embedding = gptService.embedText(request.getDescription());
-		mcpRecommendationService.processAndSaveDocument(request.getMcpId(), request.getName(), request.getDescription(),
-			embedding);
 		return mcpDashboardService.uploadMcpMetaData(userId, request, file);
 	}
 
